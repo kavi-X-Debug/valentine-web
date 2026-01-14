@@ -38,7 +38,15 @@ export default function Login() {
       navigate('/');
     } catch (error) {
       console.error("Google login error:", error);
-      setError('Failed to log in with Google');
+      let msg = 'Failed to log in with Google';
+      if (error.code === 'auth/popup-closed-by-user') msg = 'Google sign-in was closed before completing.';
+      if (error.code === 'auth/popup-blocked-by-browser') msg = 'Your browser blocked the Google sign-in popup.';
+      if (error.code === 'auth/cancelled-popup-request') msg = 'Google sign-in was cancelled by another request.';
+      if (error.code === 'auth/unauthorized-domain') msg = 'Google sign-in is not enabled for this website domain.';
+      if (msg === 'Failed to log in with Google' && error.code) {
+        msg += ` (${error.code})`;
+      }
+      setError(msg);
     }
     setLoading(false);
   }

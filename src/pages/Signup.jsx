@@ -50,7 +50,15 @@ export default function Signup() {
       navigate('/profile');
     } catch (error) {
       console.error("Google login error:", error);
-      setError('Failed to sign up with Google');
+      let msg = 'Failed to sign up with Google';
+      if (error.code === 'auth/popup-closed-by-user') msg = 'Google sign-up was closed before completing.';
+      if (error.code === 'auth/popup-blocked-by-browser') msg = 'Your browser blocked the Google sign-up popup.';
+      if (error.code === 'auth/cancelled-popup-request') msg = 'Google sign-up was cancelled by another request.';
+      if (error.code === 'auth/unauthorized-domain') msg = 'Google sign-up is not enabled for this website domain.';
+      if (msg === 'Failed to sign up with Google' && error.code) {
+        msg += ` (${error.code})`;
+      }
+      setError(msg);
     }
     setLoading(false);
   }
