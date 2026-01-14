@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { Heart, ShoppingCart, User, Menu, X, LogOut } from 'lucide-react';
@@ -14,6 +14,8 @@ export default function Navbar() {
   const [profileName, setProfileName] = useState('');
   const [profilePhotoURL, setProfilePhotoURL] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const [scrolled, setScrolled] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -55,10 +57,30 @@ export default function Navbar() {
     return () => { active = false; };
   }, [currentUser]);
 
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 8);
+    }
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const linkBase = "relative group text-love-dark font-medium";
+  function NavLink({ to, children }) {
+    const active = location.pathname === to;
+    return (
+      <Link to={to} className={`${linkBase} hover:text-love-red transition-colors`}>
+        <span>{children}</span>
+        <span className={`absolute left-0 -bottom-1 h-0.5 bg-gradient-to-r from-love-red to-love-pink transition-all duration-300 ${active ? 'w-full' : 'w-0 group-hover:w-full'}`} />
+      </Link>
+    );
+  }
+
   return (
-    <nav className="bg-love-light/80 backdrop-blur-md sticky top-0 z-50 border-b border-love-pink/30">
+    <nav className={`sticky top-0 z-50 border-b border-love-pink/30 transition-all ${scrolled ? 'bg-white/85 backdrop-blur-xl shadow-lg' : 'bg-love-light/80 backdrop-blur-md'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className={`flex justify-between ${scrolled ? 'h-14' : 'h-16'} transition-all`}>
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2 group">
               <motion.div
@@ -67,18 +89,26 @@ export default function Navbar() {
               >
                 <Heart className="h-8 w-8 text-love-red fill-current group-hover:animate-pulse" />
               </motion.div>
-              <span className="font-cursive text-3xl text-love-dark font-bold">LoveCraft</span>
+              <motion.span
+                initial={false}
+                animate={{ color: scrolled ? '#0f172a' : '#1f2937' }}
+                className="font-cursive text-3xl font-bold"
+              >
+                LoveCraft
+              </motion.span>
             </Link>
           </div>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-love-dark hover:text-love-red transition-colors font-medium">Home</Link>
-            <Link to="/products" className="text-love-dark hover:text-love-red transition-colors font-medium">Gifts</Link>
-            <Link to="/contact" className="text-love-dark hover:text-love-red transition-colors font-medium">Contact</Link>
-            <Link to="/wish" className="text-love-dark hover:text-love-red transition-colors font-medium">Wish</Link>
-            <Link to="/cart" className="relative text-love-dark hover:text-love-red transition-colors">
-              <ShoppingCart className="h-6 w-6" />
+            <NavLink to="/">Home</NavLink>
+            <NavLink to="/products">Gifts</NavLink>
+            <NavLink to="/contact">Contact</NavLink>
+            <NavLink to="/wish">Wish</NavLink>
+            <Link to="/cart" className="relative group text-love-dark hover:text-love-red transition-colors">
+              <motion.div whileHover={{ scale: 1.1 }} className="relative">
+                <ShoppingCart className="h-6 w-6" />
+              </motion.div>
               {cartCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-love-red text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-bounce">
                   {cartCount}
@@ -103,8 +133,8 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link to="/login" className="text-love-dark hover:text-love-red font-medium">Login</Link>
-                <Link to="/signup" className="bg-love-red text-white px-4 py-2 rounded-full hover:bg-red-700 transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
+                <NavLink to="/login">Login</NavLink>
+                <Link to="/signup" className="bg-love-red text-white px-4 py-2 rounded-full hover:bg-red-700 transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
                   Sign Up
                 </Link>
               </div>
