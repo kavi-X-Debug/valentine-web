@@ -6,7 +6,8 @@ import {
   createUserWithEmailAndPassword, 
   signInWithPopup, 
   signOut,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -80,6 +81,10 @@ export function AuthProvider({ children }) {
     return sendPasswordResetEmail(auth, email);
   }
 
+  function getSignInMethods(email) {
+    return fetchSignInMethodsForEmail(auth, email);
+  }
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -95,7 +100,8 @@ export function AuthProvider({ children }) {
     signup,
     loginWithGoogle,
     logout,
-    resetPassword
+    resetPassword,
+    getSignInMethods
   };
 
   return (

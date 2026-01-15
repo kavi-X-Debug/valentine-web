@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
@@ -10,7 +9,6 @@ export function useCart() {
 
 export function CartProvider({ children }) {
   const { currentUser } = useAuth();
-  const navigate = useNavigate();
   const hadUserRef = useRef(false);
   const [cartItems, setCartItems] = useState(() => {
     try {
@@ -47,11 +45,6 @@ export function CartProvider({ children }) {
   }, [cartItems, currentUser]);
 
   function addToCart(product, quantity = 1, customText = '') {
-    if (!currentUser) {
-      const go = window.confirm('Please log in to add items to your cart. Go to login now?');
-      if (go) navigate('/login');
-      return;
-    }
     setCartItems(prevItems => {
       // Check if item with same ID and same custom text exists
       const existingItemIndex = prevItems.findIndex(

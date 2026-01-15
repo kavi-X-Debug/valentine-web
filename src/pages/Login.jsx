@@ -9,7 +9,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, loginWithGoogle, resetPassword } = useAuth();
+  const { login, loginWithGoogle, resetPassword, getSignInMethods } = useAuth();
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
@@ -62,8 +62,19 @@ export default function Login() {
       setError('');
       setMessage('');
       setLoading(true);
+      const methods = await getSignInMethods(email);
+      if (!methods || methods.length === 0) {
+        setError('No account found with this email');
+        setLoading(false);
+        return;
+      }
+      if (!methods.includes('password')) {
+        setError('This account uses Google sign-in. Please sign in with Google.');
+        setLoading(false);
+        return;
+      }
       await resetPassword(email);
-      setMessage('Password reset email sent. Check your inbox.');
+      setMessage('Password reset email sent. Please check your inbox and spam folder.');
     } catch (error) {
       console.error("Reset password error:", error);
       let msg = 'Failed to send password reset email';

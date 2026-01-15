@@ -15,18 +15,14 @@ export default function ProductDetails() {
   const [added, setAdded] = useState(false);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleAddToCart = () => {
     if (!currentUser) {
-      const go = window.confirm('Please log in to add items to your cart.\nPress OK to log in, or Cancel to browse more.');
-      if (go) navigate('/login');
+      navigate('/login');
       return;
     }
-    const ok = window.confirm('Add this item to your cart?');
-    if (!ok) return;
-    addToCart(product, quantity, customText);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    setShowConfirm(true);
   };
   
   function downloadWishImage() {
@@ -119,7 +115,7 @@ export default function ProductDetails() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative">
       <Link to="/products" className="inline-flex items-center text-gray-500 hover:text-love-red mb-8 transition-colors">
         <ArrowLeft className="h-4 w-4 mr-2" /> Back to Gifts
       </Link>
@@ -218,6 +214,38 @@ export default function ProductDetails() {
           </div>
         </motion.div>
       </div>
+
+      {showConfirm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl border border-love-pink/30 p-6 max-w-sm w-full mx-4">
+            <h2 className="text-lg font-semibold text-love-dark mb-2">Add to cart?</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Add "{product.name}"{quantity > 1 ? ` (x${quantity})` : ''} to your cart?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirm(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  addToCart(product, quantity, customText);
+                  setAdded(true);
+                  setShowConfirm(false);
+                  setTimeout(() => setAdded(false), 2000);
+                }}
+                className="px-4 py-2 rounded-lg bg-love-red text-white hover:bg-red-700 text-sm"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
