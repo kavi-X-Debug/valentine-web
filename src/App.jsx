@@ -15,6 +15,7 @@ import Signup from './pages/Signup';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import Contact from './pages/Contact';
+import Faq from './pages/Faq';
 import Wish from './pages/Wish';
 import FloatingHearts from './components/FloatingHearts';
 
@@ -42,6 +43,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/faq" element={<Faq />} />
               <Route path="/wish" element={<Wish />} />
               <Route 
                 path="/admin" 

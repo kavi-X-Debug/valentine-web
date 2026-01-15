@@ -161,7 +161,7 @@ export default function Products() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <aside className="md:col-span-1">
+        <aside className="order-2 md:order-1 md:col-span-1">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-love-pink/20">
             <h2 className="text-lg font-semibold text-love-dark mb-4">Categories</h2>
             <div className="space-y-2">
@@ -181,7 +181,7 @@ export default function Products() {
             </div>
           </div>
         </aside>
-        <section className="md:col-span-3">
+        <section className="order-1 md:order-2 md:col-span-3">
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={openFilters}

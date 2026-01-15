@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -15,13 +15,19 @@ export default function Profile() {
   const [form, setForm] = useState({
     name: '',
     address: '',
+    postalCode: '',
     country: '',
-    gender: ''
+    gender: '',
+    billingName: '',
+    billingAddress: '',
+    billingPostalCode: '',
+    billingCountry: ''
   });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [editing, setEditing] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     async function load() {
@@ -36,8 +42,13 @@ export default function Profile() {
         setForm({
           name: data.name || currentUser.displayName || '',
           address: data.address || '',
+          postalCode: data.postalCode || '',
           country: data.country || '',
-          gender: data.gender || ''
+          gender: data.gender || '',
+          billingName: data.billingName || data.name || currentUser.displayName || '',
+          billingAddress: data.billingAddress || data.address || '',
+          billingPostalCode: data.billingPostalCode || data.postalCode || '',
+          billingCountry: data.billingCountry || data.country || ''
         });
         setAvatarUrl(data.photoURL || currentUser.photoURL || '');
         setFavorites(Array.isArray(data.favorites) ? data.favorites : []);
@@ -86,8 +97,13 @@ export default function Profile() {
       await setDoc(userRef, {
         name: form.name,
         address: form.address,
+        postalCode: form.postalCode,
         country: form.country,
         gender: form.gender,
+        billingName: form.billingName,
+        billingAddress: form.billingAddress,
+        billingPostalCode: form.billingPostalCode,
+        billingCountry: form.billingCountry,
         photoURL: newPhotoURL || null
       }, { merge: true });
       const profileUpdate = {};
@@ -112,14 +128,13 @@ export default function Profile() {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-        <h1 className="text-4xl font-cursive text-love-dark mb-8">Your Profile</h1>
         <div className="bg-white p-8 rounded-2xl shadow-lg border border-love-pink/20">
           {loading ? (
             <div className="text-gray-600">Loading...</div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-semibold text-love-dark">Personal Details</h2>
+                <h2 className="text-2xl font-cursive text-love-dark">Personal Details</h2>
                 <button
                   type="button"
                   onClick={() => setEditing(prev => !prev)}
@@ -140,7 +155,7 @@ export default function Profile() {
                     )}
                   </div>
                   <div>
-                    <div className="text-lg font-semibold text-love-dark">
+                    <div className="text-2xl font-semibold text-love-dark">
                       {form.name || currentUser.displayName || 'No name set'}
                     </div>
                     <div className="text-sm text-gray-500">
@@ -148,18 +163,27 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
-                    className="text-sm"
-                    disabled={!editing}
-                  />
-                </div>
+                {editing && (
+                  <div className="flex flex-col items-end">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                      className="px-4 py-2 text-sm font-medium rounded-lg bg-love-light text-love-dark hover:bg-love-pink/40 transition-colors"
+                    >
+                      Change Photo
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
                 <input
                   type="text"
                   name="name"
@@ -171,7 +195,7 @@ export default function Profile() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Address</label>
                 <input
                   type="text"
                   name="address"
@@ -181,9 +205,20 @@ export default function Profile() {
                   disabled={!editing}
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Postal Code</label>
+                  <input
+                    type="text"
+                    name="postalCode"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    value={form.postalCode}
+                    onChange={handleChange}
+                    disabled={!editing}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Country</label>
                   <input
                     type="text"
                     name="country"
@@ -194,7 +229,7 @@ export default function Profile() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Gender</label>
                   <select
                     name="gender"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -207,6 +242,59 @@ export default function Profile() {
                     <option value="female">Female</option>
                     <option value="other">Other</option>
                   </select>
+                </div>
+              </div>
+              <div className="pt-6 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-cursive text-love-dark">Billing Details</h2>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Billing Name</label>
+                    <input
+                      type="text"
+                      name="billingName"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      value={form.billingName}
+                      onChange={handleChange}
+                      disabled={!editing}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Billing Address</label>
+                    <input
+                      type="text"
+                      name="billingAddress"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      value={form.billingAddress}
+                      onChange={handleChange}
+                      disabled={!editing}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Billing Postal Code</label>
+                      <input
+                        type="text"
+                        name="billingPostalCode"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        value={form.billingPostalCode}
+                        onChange={handleChange}
+                        disabled={!editing}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Billing Country</label>
+                      <input
+                        type="text"
+                        name="billingCountry"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        value={form.billingCountry}
+                        onChange={handleChange}
+                        disabled={!editing}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
               {editing && (
