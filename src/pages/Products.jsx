@@ -72,6 +72,19 @@ export default function Products() {
   const totalPages = Math.max(1, Math.ceil(displayedProducts.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pageItems = displayedProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalItems = displayedProducts.length;
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = totalItems === 0 ? 0 : startItem + pageItems.length - 1;
+  let pages = [];
+  if (totalPages <= 5) {
+    pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  } else if (currentPage <= 3) {
+    pages = [1, 2, 3, 4, 'dots', totalPages];
+  } else if (currentPage >= totalPages - 2) {
+    pages = [1, 'dots', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  } else {
+    pages = [1, 'dots', currentPage - 1, currentPage, currentPage + 1, 'dots', totalPages];
+  }
   const allTags = useMemo(() => {
     const s = new Set();
     MOCK_PRODUCTS.forEach(p => (p.tags || []).forEach(t => s.add(t)));
@@ -317,20 +330,55 @@ export default function Products() {
               );
             })}
           </div>
-          <div className="mt-8 flex items-center justify-center space-x-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
-              <button
-                key={n}
-                onClick={() => setPage(n)}
-                className={`px-3 py-2 rounded-md border text-sm ${
-                  n === currentPage 
-                    ? 'bg-love-red text-white border-love-red' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {n}
-              </button>
-            ))}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-gray-600">
+              {totalItems === 0 ? 'No gifts found. Try adjusting your filters.' : `Showing ${startItem}-${endItem} of ${totalItems} gifts`}
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-2 rounded-md border text-sm ${
+                    currentPage === 1
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Previous
+                </button>
+                {pages.map((pItem, index) =>
+                  pItem === 'dots' ? (
+                    <span key={`dots-${index}`} className="px-2 text-gray-400 text-sm">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={pItem}
+                      onClick={() => setPage(pItem)}
+                      className={`px-3 py-2 rounded-md border text-sm ${
+                        pItem === currentPage
+                          ? 'bg-love-red text-white border-love-red'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pItem}
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-2 rounded-md border text-sm ${
+                    currentPage === totalPages
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         </section>
       </div>

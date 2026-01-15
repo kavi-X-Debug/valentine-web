@@ -16,36 +16,112 @@ export default function Home() {
       variants={containerVariants}
       className="space-y-16 pb-16"
     >
-      {/* Hero Section */}
-      <section className="relative h-[80vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-love-light via-white to-love-light opacity-90 z-10"></div>
-        <div className="absolute inset-0 bg-hearts-pattern opacity-10 z-0"></div>
-        
-        <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
+      <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-love-light via-white to-love-light opacity-90 z-10" />
+        <div className="absolute inset-0 bg-hearts-pattern opacity-10 z-0" />
+        <div className="pointer-events-none absolute -left-24 -top-24 w-72 h-72 bg-pink-400/40 rounded-full blur-3xl z-10" />
+        <div className="pointer-events-none absolute -right-24 top-32 w-80 h-80 bg-red-400/30 rounded-full blur-3xl z-10" />
+
+        <div className="relative z-20 px-4 max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-10">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.8 }}
+            className="text-center md:text-left md:max-w-xl"
           >
-            <h1 className="text-5xl md:text-7xl font-cursive text-love-red mb-6 drop-shadow-sm">
-              Make This Valentine's Unforgettable
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/70 border border-love-pink/40 text-xs font-medium text-love-red mb-4 shadow-sm backdrop-blur">
+              <span className="inline-flex items-center">
+                <Heart className="h-4 w-4 mr-2" />
+                Valentine&apos;s 2025 Collection
+              </span>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-cursive text-love-red mb-4 md:mb-6 drop-shadow-sm leading-tight">
+              Make This Valentine&apos;s Unforgettable
             </h1>
-            <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-2xl mx-auto font-light">
-              Discover handcrafted gifts, personalized treasures, and romantic surprises designed to celebrate your unique love story.
+            <p className="text-lg md:text-xl text-gray-700 mb-6 md:mb-8 max-w-2xl font-light">
+              Discover handcrafted gifts, personalized treasures and romantic surprises designed to
+              celebrate your unique love story.
             </p>
-            <Link to="/products" className="inline-flex items-center bg-love-red text-white px-8 py-4 rounded-full text-lg font-medium hover:bg-red-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-              Shop Now <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start">
+              <Link
+                to="/products"
+                className="inline-flex items-center bg-love-red text-white px-8 py-4 rounded-full text-lg font-medium hover:bg-red-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              >
+                Shop Gifts <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+              <Link
+                to="/products?cat=sets"
+                className="inline-flex items-center px-6 py-3 rounded-full text-sm md:text-base font-medium bg-white/80 backdrop-blur border border-love-pink/40 text-love-dark hover:text-love-red hover:border-love-red transition-all shadow-sm"
+              >
+                Browse Romantic Sets
+              </Link>
+            </div>
+            <div className="mt-6 flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs md:text-sm text-gray-500">
+              <div className="inline-flex items-center gap-2">
+                <span className="inline-flex h-6 px-3 items-center rounded-full bg-green-100 text-green-700 font-medium">
+                  4.9★ loved by couples
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-love-red" />
+                <span>Handmade & personalised</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-love-red" />
+                <span>Ships in 3–5 business days</span>
+              </div>
+            </div>
           </motion.div>
-        </div>
-        
-        {/* Floating Hearts Animation Background (Simplified) */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-           {/* We can add complex CSS animations here later */}
+
+          <div className="relative w-full md:w-[380px] h-[320px] md:h-[380px]">
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: [-10, 10, -10] }}
+              transition={{ duration: 8, repeat: Infinity, repeatType: 'reverse' }}
+              className="absolute inset-y-4 left-4 right-10 rounded-3xl shadow-2xl overflow-hidden border border-white/60 bg-white/80 backdrop-blur"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1518895949257-7621c3c786d4?auto=format&fit=crop&q=80&w=900"
+                alt="Romantic gift set"
+                className="w-full h-full object-cover"
+              />
+            </motion.div>
+            <motion.div
+              initial={{ y: -10, opacity: 0 }}
+              animate={{ y: [0, -16, 0] }}
+              transition={{ duration: 7, repeat: Infinity, repeatType: 'reverse', delay: 0.5 }}
+              className="absolute -bottom-6 right-0 w-40 rounded-2xl shadow-xl overflow-hidden border border-love-pink/40 bg-white"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=600"
+                alt="Jewelry gift"
+                className="w-full h-28 object-cover"
+              />
+              <div className="px-3 py-2">
+                <p className="text-xs font-semibold text-gray-800 truncate">Personalised Jewelry</p>
+                <p className="text-[11px] text-love-red font-medium">From $39</p>
+              </div>
+            </motion.div>
+            <motion.div
+              initial={{ x: 10, opacity: 0 }}
+              animate={{ x: [-6, 6, -6] }}
+              transition={{ duration: 6, repeat: Infinity, repeatType: 'reverse', delay: 0.8 }}
+              className="absolute -top-4 left-0 px-4 py-3 rounded-2xl bg-white/90 backdrop-blur shadow-lg border border-love-pink/40 flex items-center gap-3"
+            >
+              <div className="flex -space-x-2">
+                <span className="w-7 h-7 rounded-full bg-love-light border border-white" />
+                <span className="w-7 h-7 rounded-full bg-love-red/70 border border-white" />
+                <span className="w-7 h-7 rounded-full bg-rose-300 border border-white" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-800">5,000+ happy couples</p>
+                <p className="text-[11px] text-gray-500">Gifting with LoveCraft</p>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Featured Gifts Preview */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-cursive text-love-dark mb-4">Featured Collections</h2>
