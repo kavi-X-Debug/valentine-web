@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { motion } from 'framer-motion';
 import { MOCK_PRODUCTS } from '../data/products';
@@ -21,6 +21,7 @@ export default function Profile() {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [favorites, setFavorites] = useState([]);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -43,6 +44,7 @@ export default function Profile() {
       } catch (e) {
         setError('Failed to load profile');
       } finally {
+        setEditing(false);
         setLoading(false);
       }
     }
@@ -99,6 +101,7 @@ export default function Profile() {
       }
       setAvatarUrl(newPhotoURL);
       setSaved(true);
+      setEditing(false);
     } catch (e) {
       setError('Failed to save profile');
     }
@@ -115,22 +118,45 @@ export default function Profile() {
             <div className="text-gray-600">Loading...</div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-semibold text-love-dark">Personal Details</h2>
+                <button
+                  type="button"
+                  onClick={() => setEditing(prev => !prev)}
+                  className="px-4 py-2 text-sm font-medium rounded-lg border border-love-red text-love-red hover:bg-love-red hover:text-white transition-colors"
+                >
+                  {editing ? 'Cancel' : 'Update Personal Details'}
+                </button>
+              </div>
               {error && <div className="bg-red-100 text-red-700 p-3 rounded">{error}</div>}
               {saved && <div className="bg-green-100 text-green-700 p-3 rounded">Saved</div>}
-              <div className="flex items-center space-x-6">
-                <div className="w-20 h-20 rounded-full overflow-hidden bg-love-light border border-love-pink/30">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
-                  )}
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center space-x-4">
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-love-light border border-love-pink/30">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-love-dark">
+                      {form.name || currentUser.displayName || 'No name set'}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {currentUser.email}
+                    </div>
+                  </div>
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
-                  className="text-sm"
-                />
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
+                    className="text-sm"
+                    disabled={!editing}
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
@@ -138,9 +164,10 @@ export default function Profile() {
                   type="text"
                   name="name"
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   value={form.name}
                   onChange={handleChange}
+                  disabled={!editing}
                 />
               </div>
               <div>
@@ -148,9 +175,10 @@ export default function Profile() {
                 <input
                   type="text"
                   name="address"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   value={form.address}
                   onChange={handleChange}
+                  disabled={!editing}
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -159,18 +187,20 @@ export default function Profile() {
                   <input
                     type="text"
                     name="country"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                     value={form.country}
                     onChange={handleChange}
+                    disabled={!editing}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                   <select
                     name="gender"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                     value={form.gender}
                     onChange={handleChange}
+                    disabled={!editing}
                   >
                     <option value="">Select</option>
                     <option value="male">Male</option>
@@ -179,12 +209,14 @@ export default function Profile() {
                   </select>
                 </div>
               </div>
-              <button
-                type="submit"
-                className="w-full bg-love-red text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors shadow-lg"
-              >
-                Save
-              </button>
+              {editing && (
+                <button
+                  type="submit"
+                  className="w-full bg-love-red text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors shadow-lg"
+                >
+                  Save
+                </button>
+              )}
             </form>
           )}
         </div>
