@@ -7,14 +7,16 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
     e.preventDefault();
     try {
       setError('');
+      setMessage('');
       setLoading(true);
       await login(email, password);
       navigate('/');
@@ -51,6 +53,27 @@ export default function Login() {
     setLoading(false);
   }
 
+  async function handleForgotPassword() {
+    if (!email) {
+      setError('Please enter your email to reset your password');
+      return;
+    }
+    try {
+      setError('');
+      setMessage('');
+      setLoading(true);
+      await resetPassword(email);
+      setMessage('Password reset email sent. Check your inbox.');
+    } catch (error) {
+      console.error("Reset password error:", error);
+      let msg = 'Failed to send password reset email';
+      if (error.code === 'auth/user-not-found') msg = 'No account found with this email';
+      if (error.code === 'auth/invalid-email') msg = 'Invalid email address';
+      setError(msg);
+    }
+    setLoading(false);
+  }
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-love-light/30 px-4">
       <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg border border-love-pink/20">
@@ -61,6 +84,7 @@ export default function Login() {
         </div>
 
         {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
+        {message && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="status">{message}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -82,6 +106,17 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={loading}
+              className="text-sm text-love-red hover:underline"
+            >
+              Forgot password?
+            </button>
           </div>
 
           <button
