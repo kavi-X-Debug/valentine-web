@@ -15,6 +15,7 @@ export default function Signup() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const cleanedEmail = email.trim();
 
     if (password !== confirmPassword) {
       return setError('Passwords do not match');
@@ -23,7 +24,7 @@ export default function Signup() {
     try {
       setError('');
       setLoading(true);
-      await signup(email, password, { displayName: name });
+      await signup(cleanedEmail, password, { displayName: name });
       navigate('/profile');
     } catch (error) {
       console.error("Signup error:", error);

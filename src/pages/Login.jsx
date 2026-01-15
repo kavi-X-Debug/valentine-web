@@ -14,11 +14,12 @@ export default function Login() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const cleanedEmail = email.trim();
     try {
       setError('');
       setMessage('');
       setLoading(true);
-      await login(email, password);
+      await login(cleanedEmail, password);
       navigate('/');
     } catch (error) {
       console.error("Login error:", error);
@@ -54,7 +55,8 @@ export default function Login() {
   }
 
   async function handleForgotPassword() {
-    if (!email) {
+    const cleanedEmail = email.trim();
+    if (!cleanedEmail) {
       setError('Please enter your email to reset your password');
       return;
     }
@@ -62,7 +64,7 @@ export default function Login() {
       setError('');
       setMessage('');
       setLoading(true);
-      const methods = await getSignInMethods(email);
+      const methods = await getSignInMethods(cleanedEmail);
       if (!methods || methods.length === 0) {
         setError('No account found with this email');
         setLoading(false);
@@ -73,7 +75,7 @@ export default function Login() {
         setLoading(false);
         return;
       }
-      await resetPassword(email);
+      await resetPassword(cleanedEmail);
       setMessage('Password reset email sent. Please check your inbox and spam folder.');
     } catch (error) {
       console.error("Reset password error:", error);
