@@ -17,8 +17,8 @@ export default {
         }
       },
       fontFamily: {
-        cursive: ['"Pacifico"', 'cursive'],
-        sans: ['"Poppins"', 'system-ui', 'sans-serif'],
+        cursive: ['"Roboto"', 'system-ui', 'sans-serif'],
+        sans: ['"Roboto"', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
         'hearts-pattern': "url('https://www.transparenttextures.com/patterns/heart-necklace.png')",

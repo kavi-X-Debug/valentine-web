@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 export default function Wish() {
@@ -8,6 +8,10 @@ export default function Wish() {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [style, setStyle] = useState('classic');
+  const [faceYou, setFaceYou] = useState(null);
+  const [facePartner, setFacePartner] = useState(null);
+  const youInputRef = useRef(null);
+  const partnerInputRef = useRef(null);
 
   const preview = useMemo(() => {
     const n1 = you || 'You';
@@ -44,7 +48,16 @@ export default function Wish() {
     return lines;
   }
 
-  function buildImage() {
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  async function buildImage() {
     const n1 = (you || 'You').trim();
     const n2 = (partner || 'Your Love').trim();
     const base = (message || 'Wishing us endless love, laughter, and sweet moments.').trim();
@@ -91,6 +104,38 @@ export default function Wish() {
       y += 68;
     });
     ctx.fillStyle = accent;
+    let imgYou = null;
+    let imgPartner = null;
+    if (faceYou) {
+      try {
+        imgYou = await loadImage(faceYou);
+      } catch {}
+    }
+    if (facePartner) {
+      try {
+        imgPartner = await loadImage(facePartner);
+      } catch {}
+    }
+    const faceRadius = 120;
+    const faceYCenter = 570;
+    if (imgYou) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(360, faceYCenter, faceRadius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(imgYou, 360 - faceRadius, faceYCenter - faceRadius, faceRadius * 2, faceRadius * 2);
+      ctx.restore();
+    }
+    if (imgPartner) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(720, faceYCenter, faceRadius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(imgPartner, 720 - faceRadius, faceYCenter - faceRadius, faceRadius * 2, faceRadius * 2);
+      ctx.restore();
+    }
     ctx.globalAlpha = 0.15;
     ctx.font = 'bold 240px Georgia';
     ctx.fillText('❤', 160, 860);
@@ -102,7 +147,7 @@ export default function Wish() {
   async function downloadImage() {
     setDownloading(true);
     try {
-      const url = buildImage();
+      const url = await buildImage();
       const a = document.createElement('a');
       const n1 = (you || 'You').replace(/\s+/g, '_');
       const n2 = (partner || 'Your_Love').replace(/\s+/g, '_');
@@ -204,6 +249,81 @@ export default function Wish() {
                   </button>
                 </div>
               </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Add your faces (optional)</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => youInputRef.current && youInputRef.current.click()}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs font-medium text-gray-700 hover:border-love-red hover:text-love-red transition-colors"
+                    >
+                      Upload you
+                    </button>
+                    <input
+                      ref={youInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files && e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const val = ev.target && ev.target.result;
+                          setFaceYou(typeof val === 'string' ? val : null);
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    {faceYou && (
+                      <div className="flex justify-center">
+                        <img
+                          src={faceYou}
+                          alt="You"
+                          className="w-16 h-16 rounded-full object-cover border border-love-pink/50"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => partnerInputRef.current && partnerInputRef.current.click()}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs font-medium text-gray-700 hover:border-love-red hover:text-love-red transition-colors"
+                    >
+                      Upload partner
+                    </button>
+                    <input
+                      ref={partnerInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files && e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const val = ev.target && ev.target.result;
+                          setFacePartner(typeof val === 'string' ? val : null);
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    {facePartner && (
+                      <div className="flex justify-center">
+                        <img
+                          src={facePartner}
+                          alt="Partner"
+                          className="w-16 h-16 rounded-full object-cover border border-love-pink/50"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
               <button
                 onClick={copyWish}
                 className="w-full bg-love-red text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors shadow-lg"
@@ -237,6 +357,22 @@ export default function Wish() {
             </div>
             <div className="relative z-10 max-w-md text-center">
               <h2 className="text-3xl font-cursive text-love-dark mb-4">Your Wish</h2>
+              <div className="flex items-center justify-center gap-4 mb-4">
+                {faceYou && (
+                  <img
+                    src={faceYou}
+                    alt="You preview"
+                    className="w-14 h-14 rounded-full object-cover border border-white shadow"
+                  />
+                )}
+                {facePartner && (
+                  <img
+                    src={facePartner}
+                    alt="Partner preview"
+                    className="w-14 h-14 rounded-full object-cover border border-white shadow"
+                  />
+                )}
+              </div>
               <motion.pre
                 key={style + preview}
                 initial={{ scale: 0.96, opacity: 0 }}
