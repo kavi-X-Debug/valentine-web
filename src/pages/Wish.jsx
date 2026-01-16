@@ -7,6 +7,7 @@ export default function Wish() {
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [style, setStyle] = useState('classic');
 
   const preview = useMemo(() => {
     const n1 = you || 'You';
@@ -52,11 +53,25 @@ export default function Wish() {
     canvas.height = 1080;
     const ctx = canvas.getContext('2d');
     const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    g.addColorStop(0, '#fff1f5');
-    g.addColorStop(1, '#fde0e6');
+    let gradientTop = '#fff1f5';
+    let gradientBottom = '#fde0e6';
+    let accent = '#cc1d4f';
+    let bodyColor = '#6b7280';
+    if (style === 'playful') {
+      gradientTop = '#ffe4e6';
+      gradientBottom = '#fed7e2';
+      accent = '#db2777';
+    } else if (style === 'dreamy') {
+      gradientTop = '#e0f2fe';
+      gradientBottom = '#fdf2ff';
+      accent = '#1d4ed8';
+      bodyColor = '#4b5563';
+    }
+    g.addColorStop(0, gradientTop);
+    g.addColorStop(1, gradientBottom);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#cc1d4f';
+    ctx.fillStyle = accent;
     ctx.font = 'bold 72px Georgia';
     const title = 'Happy Valentine’s Day';
     const tw = ctx.measureText(title).width;
@@ -68,14 +83,14 @@ export default function Wish() {
     const fontBody = '48px Arial';
     const lines = wrapLines(ctx, base, 820, fontBody);
     ctx.font = fontBody;
-    ctx.fillStyle = '#6b7280';
+    ctx.fillStyle = bodyColor;
     let y = 420;
     lines.forEach(l => {
       const w = ctx.measureText(l).width;
       ctx.fillText(l, (canvas.width - w) / 2, y);
       y += 68;
     });
-    ctx.fillStyle = '#cc1d4f';
+    ctx.fillStyle = accent;
     ctx.globalAlpha = 0.15;
     ctx.font = 'bold 240px Georgia';
     ctx.fillText('❤', 160, 860);
@@ -134,8 +149,60 @@ export default function Wish() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
                   placeholder="Write your sweet message..."
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => setMessage(e.target.value.slice(0, 220))}
                 />
+                <div className="flex items-center justify-between mt-1 text-xs text-gray-500">
+                  <span>{message.length}/220 characters</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMessage('I am so grateful for every moment with you. Here is to many more memories, laughs, and late-night talks together.')
+                    }
+                    className="text-love-red hover:underline"
+                  >
+                    Fill with a sweet idea
+                  </button>
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Card style</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStyle('classic')}
+                    className={`px-3 py-2 rounded-full text-xs font-medium border transition-colors ${
+                      style === 'classic'
+                        ? 'bg-love-red text-white border-love-red'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-love-red/60'
+                    }`}
+                  >
+                    Classic
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStyle('playful')}
+                    className={`px-3 py-2 rounded-full text-xs font-medium border transition-colors ${
+                      style === 'playful'
+                        ? 'bg-love-red text-white border-love-red'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-love-red/60'
+                    }`}
+                  >
+                    Playful
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStyle('dreamy')}
+                    className={`px-3 py-2 rounded-full text-xs font-medium border transition-colors ${
+                      style === 'dreamy'
+                        ? 'bg-love-red text-white border-love-red'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-love-red/60'
+                    }`}
+                  >
+                    Dreamy
+                  </button>
+                </div>
               </div>
               <button
                 onClick={copyWish}
@@ -170,7 +237,22 @@ export default function Wish() {
             </div>
             <div className="relative z-10 max-w-md text-center">
               <h2 className="text-3xl font-cursive text-love-dark mb-4">Your Wish</h2>
-              <pre className="whitespace-pre-wrap text-gray-700 bg-love-light/30 rounded-xl p-4 border border-love-pink/20">{preview}</pre>
+              <motion.pre
+                key={style + preview}
+                initial={{ scale: 0.96, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.25 }}
+                className={
+                  'whitespace-pre-wrap text-gray-700 rounded-xl p-4 border border-love-pink/20 bg-gradient-to-br ' +
+                  (style === 'classic'
+                    ? 'from-pink-50 to-rose-100'
+                    : style === 'playful'
+                    ? 'from-rose-100 to-pink-200'
+                    : 'from-indigo-100 to-pink-100')
+                }
+              >
+                {preview}
+              </motion.pre>
             </div>
           </motion.div>
         </div>

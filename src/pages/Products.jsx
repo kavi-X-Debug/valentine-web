@@ -68,7 +68,7 @@ export default function Products() {
     }
     return arr;
   }, [filter, search, minPrice, maxPrice, sort, selectedTags, onlyFavorites, pricePreset, favorites, currentUser]);
-  const pageSize = 10;
+  const pageSize = 15;
   const totalPages = Math.max(1, Math.ceil(displayedProducts.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pageItems = displayedProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
