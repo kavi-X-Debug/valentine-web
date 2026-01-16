@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { Download } from 'lucide-react';
 
 export default function Wish() {
   const [faceYou, setFaceYou] = useState(null);
@@ -7,8 +8,10 @@ export default function Wish() {
   const [template, setTemplate] = useState('dance');
   const [created, setCreated] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const youInputRef = useRef(null);
   const partnerInputRef = useRef(null);
+  const canvasRef = useRef(null);
 
   function handleFileChange(e, setFace) {
     const file = e.target.files && e.target.files[0];
@@ -32,6 +35,169 @@ export default function Wish() {
       setCreating(false);
       setCreated(true);
     }, 800);
+  }
+
+  async function handleDownload() {
+    if (!faceYou || !facePartner) {
+      alert('Please upload both faces first');
+      return;
+    }
+    if (!created) {
+      alert('Please create the video first');
+      return;
+    }
+    if (typeof window === 'undefined') return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    if (typeof MediaRecorder === 'undefined' || typeof canvas.captureStream !== 'function') {
+      alert('Video download is not supported in this browser');
+      return;
+    }
+    setDownloading(true);
+    const stream = canvas.captureStream(30);
+    const chunks = [];
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    recorder.ondataavailable = e => {
+      if (e.data && e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+    const downloadPromise = new Promise(resolve => {
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'love-video.webm';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+    });
+    const imgYou = new Image();
+    const imgPartner = new Image();
+    imgYou.src = faceYou;
+    imgPartner.src = facePartner;
+    function waitForImage(img) {
+      return new Promise((resolve, reject) => {
+        if (img.complete && img.naturalWidth) {
+          resolve();
+          return;
+        }
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to load image'));
+      });
+    }
+    try {
+      await Promise.all([waitForImage(imgYou), waitForImage(imgPartner)]);
+    } catch {
+      alert('Failed to load images for video');
+      setDownloading(false);
+      stream.getTracks().forEach(track => track.stop());
+      return;
+    }
+    const width = canvas.width;
+    const height = canvas.height;
+    const fps = 30;
+    const duration = 4;
+    const totalFrames = fps * duration;
+    let frame = 0;
+    function drawFrame() {
+      const t = frame / fps;
+      const grad = ctx.createLinearGradient(0, 0, width, height);
+      if (template === 'dance') {
+        grad.addColorStop(0, '#fee2e2');
+        grad.addColorStop(1, '#f97373');
+      } else if (template === 'hearts') {
+        grad.addColorStop(0, '#ffe4e6');
+        grad.addColorStop(1, '#fb7185');
+      } else {
+        grad.addColorStop(0, '#e0e7ff');
+        grad.addColorStop(1, '#f9a8d4');
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+      const centerY = height / 2;
+      const baseY = centerY;
+      const baseYouX = width * 0.3;
+      const basePartnerX = width * 0.7;
+      const baseRadius = Math.min(width, height) * 0.16;
+      let youX = baseYouX;
+      let partnerX = basePartnerX;
+      let youY = baseY;
+      let partnerY = baseY;
+      let youScale = 1;
+      let partnerScale = 1;
+      let youRot = 0;
+      let partnerRot = 0;
+      if (template === 'dance') {
+        const a = Math.sin(t * Math.PI * 2);
+        youY = baseY + a * -20;
+        partnerY = baseY + a * 20;
+        youRot = a * -0.25;
+        partnerRot = a * 0.25;
+      } else if (template === 'hearts') {
+        const a = Math.sin(t * Math.PI * 2);
+        youY = baseY + a * -25;
+        partnerY = baseY + a * 25;
+        youX = baseYouX + a * -width * 0.03;
+        partnerX = basePartnerX + a * width * 0.03;
+      } else if (template === 'zoom') {
+        const a = Math.sin(t * Math.PI * 2);
+        const s = 1 + 0.08 * a;
+        youScale = s;
+        partnerScale = s;
+        youY = baseY + a * -10;
+        partnerY = baseY + Math.sin(t * Math.PI * 2 + Math.PI) * 10;
+      }
+      function drawFace(img, cx, cy, scale, rot) {
+        const r = baseRadius * scale;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(rot);
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(img, -r, -r, r * 2, r * 2);
+        ctx.restore();
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.beginPath();
+        ctx.arc(0, 0, r + 8, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.lineWidth = 6;
+        ctx.stroke();
+        ctx.restore();
+      }
+      drawFace(imgYou, youX, youY, youScale, youRot);
+      drawFace(imgPartner, partnerX, partnerY, partnerScale, partnerRot);
+      ctx.font = 'bold 32px system-ui';
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.textAlign = 'center';
+      if (template === 'dance') {
+        ctx.fillText('Dance of Love', width / 2, height - 40);
+      } else if (template === 'hearts') {
+        ctx.fillText('Love Vibes', width / 2, height - 40);
+      } else {
+        ctx.fillText('Zoom in Love', width / 2, height - 40);
+      }
+      frame += 1;
+      if (frame < totalFrames) {
+        requestAnimationFrame(drawFrame);
+      } else {
+        recorder.stop();
+        stream.getTracks().forEach(track => track.stop());
+      }
+    }
+    recorder.start();
+    drawFrame();
+    await downloadPromise;
+    setDownloading(false);
   }
 
   const bgClass =
@@ -251,10 +417,24 @@ export default function Wish() {
                   </div>
                 )}
               </div>
+              {created && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    disabled={downloading}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-love-red text-white font-medium shadow-md hover:bg-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <Download className="h-5 w-5" />
+                    <span>{downloading ? 'Preparing video...' : 'Download video'}</span>
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
       </motion.div>
+      <canvas ref={canvasRef} width={640} height={360} className="hidden" />
     </div>
   );
 }
