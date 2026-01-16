@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { motion } from 'framer-motion';
 import { MOCK_PRODUCTS } from '../data/products';
@@ -27,6 +27,7 @@ export default function Profile() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [editing, setEditing] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -67,6 +68,51 @@ export default function Profile() {
     setForm(prev => ({ ...prev, [name]: value }));
   }
 
+  function validateForm() {
+    const next = {};
+    const name = form.name.trim();
+    if (!name) {
+      next.name = 'Full name is required';
+    } else if (name.length < 2) {
+      next.name = 'Full name must be at least 2 characters';
+    }
+    const address = form.address.trim();
+    if (address && address.length < 5) {
+      next.address = 'Address should be at least 5 characters';
+    }
+    const billingName = form.billingName.trim();
+    if (billingName && billingName.length < 2) {
+      next.billingName = 'Billing name should be at least 2 characters';
+    }
+    const billingAddress = form.billingAddress.trim();
+    if (billingAddress && billingAddress.length < 5) {
+      next.billingAddress = 'Billing address should be at least 5 characters';
+    }
+    function validatePostal(value, key) {
+      const v = value.trim();
+      if (!v) return;
+      if (v.length < 3 || v.length > 10) {
+        next[key] = 'Postal code should be 3 to 10 characters';
+      }
+      if (!/^[0-9A-Za-z\- ]+$/.test(v)) {
+        next[key] = 'Postal code can use letters and numbers only';
+      }
+    }
+    validatePostal(form.postalCode, 'postalCode');
+    validatePostal(form.billingPostalCode, 'billingPostalCode');
+    function validateCountry(value, key) {
+      const v = value.trim();
+      if (!v) return;
+      if (v.length < 2) {
+        next[key] = 'Country name should be at least 2 characters';
+      }
+    }
+    validateCountry(form.country, 'country');
+    validateCountry(form.billingCountry, 'billingCountry');
+    setFieldErrors(next);
+    return Object.keys(next).length === 0;
+  }
+
   function fileToDataURL(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -80,6 +126,10 @@ export default function Profile() {
     e.preventDefault();
     setError('');
     setSaved(false);
+    const ok = validateForm();
+    if (!ok) {
+      return;
+    }
     try {
       let newPhotoURL = avatarUrl;
       if (avatarFile) {
@@ -123,37 +173,90 @@ export default function Profile() {
     }
   }
 
+  async function removeFavorite(id) {
+    if (!currentUser) return;
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, {
+        favorites: arrayRemove(id)
+      });
+      setFavorites(prev => prev.filter(x => x !== id));
+    } catch (e) {
+      console.error('Failed to remove favorite', e);
+    }
+  }
+
   if (!currentUser) return null;
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-        <div className="bg-white p-8 rounded-2xl shadow-lg border border-love-pink/20">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="relative"
+      >
+        <motion.div
+          aria-hidden="true"
+          className="pointer-events-none absolute -inset-x-10 -top-10 h-40 bg-gradient-to-r from-love-light/60 via-white to-love-light/60 blur-3xl opacity-60"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+        />
+        <motion.div
+          layout
+          className="bg-white p-8 rounded-2xl shadow-lg border border-love-pink/20 relative overflow-hidden"
+          whileHover={{ y: -2 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+        >
           {loading ? (
             <div className="text-gray-600">Loading...</div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-2xl font-cursive text-love-dark">Personal Details</h2>
-                <button
+                <motion.h2
+                  className="text-2xl font-cursive text-love-dark"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  Personal Details
+                </motion.h2>
+                <motion.button
                   type="button"
                   onClick={() => setEditing(prev => !prev)}
                   className="px-4 py-2 text-sm font-medium rounded-lg border border-love-red text-love-red hover:bg-love-red hover:text-white transition-colors"
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ translateY: -1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
                   {editing ? 'Cancel' : 'Update Personal Details'}
-                </button>
+                </motion.button>
               </div>
               {error && <div className="bg-red-100 text-red-700 p-3 rounded">{error}</div>}
-              {saved && <div className="bg-green-100 text-green-700 p-3 rounded">Saved</div>}
+              {saved && (
+                <motion.div
+                  className="bg-green-100 text-green-700 p-3 rounded inline-flex items-center gap-2"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+                >
+                  <span>Saved</span>
+                </motion.div>
+              )}
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-20 h-20 rounded-full overflow-hidden bg-love-light border border-love-pink/30">
+                  <motion.div
+                    className="w-20 h-20 rounded-full overflow-hidden bg-love-light border border-love-pink/30 ring-2 ring-love-light/60"
+                    whileHover={{ scale: 1.03, rotate: 1.5 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                  >
                     {avatarUrl ? (
                       <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                     )}
-                  </div>
+                  </motion.div>
                   <div>
                     <div className="text-2xl font-semibold text-love-dark">
                       {form.name || currentUser.displayName || 'No name set'}
@@ -172,13 +275,14 @@ export default function Profile() {
                       onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
                       className="hidden"
                     />
-                    <button
+                    <motion.button
                       type="button"
                       onClick={() => fileInputRef.current && fileInputRef.current.click()}
                       className="px-4 py-2 text-sm font-medium rounded-lg bg-love-light text-love-dark hover:bg-love-pink/40 transition-colors"
+                      whileTap={{ scale: 0.95 }}
                     >
                       Change Photo
-                    </button>
+                    </motion.button>
                   </div>
                 )}
               </div>
@@ -193,6 +297,9 @@ export default function Profile() {
                   onChange={handleChange}
                   disabled={!editing}
                 />
+                {fieldErrors.name && (
+                  <div className="mt-1 text-xs text-red-600">{fieldErrors.name}</div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Address</label>
@@ -204,6 +311,9 @@ export default function Profile() {
                   onChange={handleChange}
                   disabled={!editing}
                 />
+                {fieldErrors.address && (
+                  <div className="mt-1 text-xs text-red-600">{fieldErrors.address}</div>
+                )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -216,6 +326,9 @@ export default function Profile() {
                     onChange={handleChange}
                     disabled={!editing}
                   />
+                  {fieldErrors.postalCode && (
+                    <div className="mt-1 text-xs text-red-600">{fieldErrors.postalCode}</div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Country</label>
@@ -227,6 +340,9 @@ export default function Profile() {
                     onChange={handleChange}
                     disabled={!editing}
                   />
+                  {fieldErrors.country && (
+                    <div className="mt-1 text-xs text-red-600">{fieldErrors.country}</div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Gender</label>
@@ -259,6 +375,9 @@ export default function Profile() {
                       onChange={handleChange}
                       disabled={!editing}
                     />
+                    {fieldErrors.billingName && (
+                      <div className="mt-1 text-xs text-red-600">{fieldErrors.billingName}</div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1">Billing Address</label>
@@ -270,6 +389,9 @@ export default function Profile() {
                       onChange={handleChange}
                       disabled={!editing}
                     />
+                    {fieldErrors.billingAddress && (
+                      <div className="mt-1 text-xs text-red-600">{fieldErrors.billingAddress}</div>
+                    )}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -282,6 +404,9 @@ export default function Profile() {
                         onChange={handleChange}
                         disabled={!editing}
                       />
+                      {fieldErrors.billingPostalCode && (
+                        <div className="mt-1 text-xs text-red-600">{fieldErrors.billingPostalCode}</div>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">Billing Country</label>
@@ -293,42 +418,75 @@ export default function Profile() {
                         onChange={handleChange}
                         disabled={!editing}
                       />
+                      {fieldErrors.billingCountry && (
+                        <div className="mt-1 text-xs text-red-600">{fieldErrors.billingCountry}</div>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
               {editing && (
-                <button
+                <motion.button
                   type="submit"
                   className="w-full bg-love-red text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors shadow-lg"
+                  whileTap={{ scale: 0.97 }}
+                  whileHover={{ translateY: -1 }}
                 >
                   Save
-                </button>
+                </motion.button>
               )}
             </form>
           )}
-        </div>
+        </motion.div>
       </motion.div>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-        <div className="bg-white p-8 rounded-2xl shadow-lg border border-love-pink/20 mt-8">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <motion.div
+          layout
+          className="bg-white p-8 rounded-2xl shadow-lg border border-love-pink/20 mt-8"
+        >
           <h2 className="text-2xl font-semibold text-love-dark mb-4">Your Favorites</h2>
           {favorites.length === 0 ? (
             <div className="text-gray-600">No favorites yet. Tap the heart on items to save them here.</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {MOCK_PRODUCTS.filter(p => favorites.includes(p.id)).map(p => (
-                <div key={p.id} className="border border-love-pink/20 rounded-xl overflow-hidden bg-white shadow-sm">
-                  <img src={p.image} alt={p.name} className="w-full h-40 object-cover" />
-                  <div className="p-4">
+              {MOCK_PRODUCTS.filter(p => favorites.includes(p.id)).map((p, index) => (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.05 * index }}
+                  whileHover={{ y: -4, boxShadow: '0 18px 35px rgba(15,23,42,0.16)' }}
+                  className="border border-love-pink/20 rounded-xl overflow-hidden bg-white shadow-sm flex flex-col"
+                >
+                  <motion.img
+                    src={p.image}
+                    alt={p.name}
+                    className="w-full h-40 object-cover"
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+                  />
+                  <div className="p-4 flex-1 flex flex-col">
                     <div className="text-xs text-love-red font-medium mb-1 uppercase tracking-wider">{p.category}</div>
                     <div className="font-semibold text-gray-800">{p.name}</div>
-                    <div className="text-love-dark font-bold mt-2">${p.price.toFixed(2)}</div>
+                    <div className="text-love-dark font-bold mt-2 mb-4">${p.price.toFixed(2)}</div>
+                    <motion.button
+                      type="button"
+                      onClick={() => removeFavorite(p.id)}
+                      className="mt-auto inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-medium border border-gray-300 text-gray-700 hover:border-love-red hover:text-love-red transition-colors"
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Remove from favorites
+                    </motion.button>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   );

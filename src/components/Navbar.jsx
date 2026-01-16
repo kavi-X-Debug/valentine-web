@@ -103,6 +103,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-8">
             <NavLink to="/">Home</NavLink>
             <NavLink to="/products">Gifts</NavLink>
+            <NavLink to="/categories">Categories</NavLink>
             <NavLink to="/contact">Contact</NavLink>
             <NavLink to="/wish">Wish</NavLink>
             <Link to="/cart" className="relative group text-love-dark hover:text-love-red transition-colors">
@@ -165,6 +166,7 @@ export default function Navbar() {
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               <Link to="/" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Home</Link>
               <Link to="/products" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Gifts</Link>
+              <Link to="/categories" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Categories</Link>
               <Link to="/contact" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Contact</Link>
               <Link to="/wish" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Wish</Link>
               <Link to="/cart" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Cart</Link>

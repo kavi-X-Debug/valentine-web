@@ -19,6 +19,7 @@ import Faq from './pages/Faq';
 import Wish from './pages/Wish';
 import Returns from './pages/Returns';
 import FloatingHearts from './components/FloatingHearts';
+import Categories from './pages/Categories';
 
 // Simple wrapper for protected routes
 function PrivateRoute({ children }) {
@@ -38,6 +39,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/products" element={<Products />} />
               <Route path="/products/:id" element={<ProductDetails />} />
+              <Route path="/categories" element={<Categories />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-success" element={<OrderSuccess />} />

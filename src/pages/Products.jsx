@@ -5,6 +5,7 @@ import { MOCK_PRODUCTS } from '../data/products';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useSearchParams } from 'react-router-dom';
 
 export default function Products() {
   const [filter, setFilter] = useState('All');
@@ -13,19 +14,13 @@ export default function Products() {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [tempSearch, setTempSearch] = useState('');
-  const [tempSort, setTempSort] = useState('none');
-  const [tempMinPrice, setTempMinPrice] = useState('');
-  const [tempMaxPrice, setTempMaxPrice] = useState('');
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState([]);
   const { currentUser } = useAuth();
   const [selectedTags, setSelectedTags] = useState([]);
-  const [tempSelectedTags, setTempSelectedTags] = useState([]);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
-  const [tempOnlyFavorites, setTempOnlyFavorites] = useState(false);
   const [pricePreset, setPricePreset] = useState('none');
-  const [tempPricePreset, setTempPricePreset] = useState('none');
+  const [searchParams] = useSearchParams();
 
   const categories = useMemo(() => {
     const set = new Set(MOCK_PRODUCTS.map(p => p.category));
@@ -92,6 +87,20 @@ export default function Products() {
   }, []);
 
   useEffect(() => {
+    const raw = searchParams.get('category') || searchParams.get('cat');
+    if (!raw) return;
+    const value = decodeURIComponent(raw).toLowerCase();
+    let found = categories.find(c => c.toLowerCase() === value);
+    if (!found) {
+      found = categories.find(c => c.toLowerCase().includes(value));
+    }
+    if (found && found !== filter) {
+      setFilter(found);
+      setPage(1);
+    }
+  }, [searchParams, categories, filter]);
+
+  useEffect(() => {
     let active = true;
     async function loadFavs() {
       if (!currentUser) {
@@ -129,38 +138,8 @@ export default function Products() {
     }
   }
 
-  function openFilters() {
-    setTempSearch(search);
-    setTempSort(sort);
-    setTempMinPrice(minPrice);
-    setTempMaxPrice(maxPrice);
-    setTempSelectedTags(selectedTags);
-    setTempOnlyFavorites(onlyFavorites);
-    setTempPricePreset(pricePreset);
-    setFilterOpen(true);
-  }
-
-  function applyFilters() {
-    setSearch(tempSearch);
-    setSort(tempSort);
-    setMinPrice(tempMinPrice);
-    setMaxPrice(tempMaxPrice);
-    setSelectedTags(tempSelectedTags);
-    setOnlyFavorites(tempOnlyFavorites);
-    setPricePreset(tempPricePreset);
-    setFilterOpen(false);
-    setPage(1);
-  }
-
-  function cancelFilters() {
-    setFilterOpen(false);
-    setTempSearch(search);
-    setTempSort(sort);
-    setTempMinPrice(minPrice);
-    setTempMaxPrice(maxPrice);
-    setTempSelectedTags(selectedTags);
-    setTempOnlyFavorites(onlyFavorites);
-    setTempPricePreset(pricePreset);
+  function toggleFilters() {
+    setFilterOpen(v => !v);
   }
 
   return (
@@ -174,7 +153,7 @@ export default function Products() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <aside className="order-2 md:order-1 md:col-span-1">
+        <aside className="hidden md:block order-2 md:order-1 md:col-span-1">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-love-pink/20">
             <h2 className="text-lg font-semibold text-love-dark mb-4">Categories</h2>
             <div className="space-y-2">
@@ -197,7 +176,7 @@ export default function Products() {
         <section className="order-1 md:order-2 md:col-span-3">
           <div className="flex items-center justify-between mb-4">
             <button
-              onClick={openFilters}
+              onClick={toggleFilters}
               className="p-2 rounded-lg bg-white border border-love-pink/30 text-gray-600 hover:text-love-red hover:border-love-red transition-colors"
               aria-label="Open Filters"
               title="Filters"
@@ -205,20 +184,25 @@ export default function Products() {
               <Filter className="h-5 w-5" />
             </button>
           </div>
-          {filterOpen && (
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-love-pink/20 mb-6">
+          <div className={`bg-white p-4 rounded-xl shadow-sm border border-love-pink/20 mb-6 ${filterOpen ? 'block' : 'hidden'} md:block`}>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <input
                   type="text"
                   placeholder="Search products..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={tempSearch}
-                  onChange={(e) => setTempSearch(e.target.value)}
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
                 />
                 <select
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={tempSort}
-                  onChange={(e) => setTempSort(e.target.value)}
+                  value={sort}
+                  onChange={(e) => {
+                    setSort(e.target.value);
+                    setPage(1);
+                  }}
                 >
                   <option value="none">Sort by</option>
                   <option value="price_asc">Price: Low to High</option>
@@ -232,8 +216,11 @@ export default function Products() {
                   step="0.01"
                   placeholder="Min price"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={tempMinPrice}
-                  onChange={(e) => setTempMinPrice(e.target.value)}
+                  value={minPrice}
+                  onChange={(e) => {
+                    setMinPrice(e.target.value);
+                    setPage(1);
+                  }}
                 />
                 <input
                   type="number"
@@ -241,8 +228,11 @@ export default function Products() {
                   step="0.01"
                   placeholder="Max price"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={tempMaxPrice}
-                  onChange={(e) => setTempMaxPrice(e.target.value)}
+                  value={maxPrice}
+                  onChange={(e) => {
+                    setMaxPrice(e.target.value);
+                    setPage(1);
+                  }}
                 />
               </div>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -250,12 +240,16 @@ export default function Products() {
                   <div className="text-sm font-medium text-gray-700 mb-2">Tags</div>
                   <div className="flex flex-wrap gap-2">
                     {allTags.map(t => {
-                      const active = tempSelectedTags.includes(t);
+                      const active = selectedTags.includes(t);
                       return (
                         <button
                           key={t}
                           onClick={() => {
-                            setTempSelectedTags(prev => active ? prev.filter(x => x !== t) : [...prev, t]);
+                            setSelectedTags(prev => {
+                              const next = active ? prev.filter(x => x !== t) : [...prev, t];
+                              return next;
+                            });
+                            setPage(1);
                           }}
                           className={`px-3 py-1 rounded-full text-sm border ${
                             active ? 'bg-love-red text-white border-love-red' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -278,9 +272,12 @@ export default function Products() {
                     ].map(opt => (
                       <button
                         key={opt.id}
-                        onClick={() => setTempPricePreset(opt.id)}
+                        onClick={() => {
+                          setPricePreset(opt.id);
+                          setPage(1);
+                        }}
                         className={`w-full text-left px-3 py-2 rounded-lg border text-sm ${
-                          tempPricePreset === opt.id ? 'bg-love-red text-white border-love-red' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          pricePreset === opt.id ? 'bg-love-red text-white border-love-red' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                         }`}
                       >
                         {opt.label}
@@ -291,32 +288,21 @@ export default function Products() {
                 <div>
                   <div className="text-sm font-medium text-gray-700 mb-2">Only Favorites</div>
                   <button
-                    onClick={() => setTempOnlyFavorites(v => !v)}
+                    onClick={() => {
+                      setOnlyFavorites(v => !v);
+                      setPage(1);
+                    }}
                     disabled={!currentUser}
                     className={`w-full px-3 py-2 rounded-lg border text-sm ${
-                      tempOnlyFavorites ? 'bg-love-red text-white border-love-red' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      onlyFavorites ? 'bg-love-red text-white border-love-red' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                     } ${!currentUser ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    {tempOnlyFavorites ? 'Enabled' : 'Disabled'}
+                    {onlyFavorites ? 'Enabled' : 'Disabled'}
                   </button>
                 </div>
               </div>
-              <div className="mt-4 flex items-center justify-end space-x-3">
-                <button
-                  onClick={cancelFilters}
-                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={applyFilters}
-                  className="px-4 py-2 rounded-lg bg-love-red text-white hover:bg-red-700 transition-colors"
-                >
-                  Show Results
-                </button>
-              </div>
             </div>
-          )}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {pageItems.map(product => {
               const fav = favorites.includes(product.id);
