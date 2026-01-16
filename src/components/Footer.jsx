@@ -4,13 +4,13 @@ import { Link } from 'react-router-dom';
 
 export default function Footer() {
   return (
-    <footer className="bg-white border-t border-love-pink/30 pt-12 pb-8">
+    <footer className="bg-white border-t border-love-pink/30 pt-12 pb-8 font-oldSans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-1">
             <Link to="/" className="flex items-center space-x-2 mb-4">
               <Heart className="h-6 w-6 text-love-red fill-current" />
-              <span className="font-cursive text-2xl text-love-dark font-bold">LoveCraft</span>
+              <span className="font-oldCursive text-2xl text-love-dark font-bold">LoveCraft</span>
             </Link>
             <p className="text-gray-600 text-sm">
               Handcrafted gifts for your special moments. Celebrating love, one gift at a time.

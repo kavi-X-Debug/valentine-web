@@ -66,7 +66,7 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const linkBase = "relative group text-love-dark font-medium";
+  const linkBase = "relative group text-love-dark font-medium font-oldSans";
   function NavLink({ to, children }) {
     const active = location.pathname === to;
     return (
@@ -78,7 +78,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className={`sticky top-0 z-50 border-b border-love-pink/30 transition-all ${scrolled ? 'bg-white/85 backdrop-blur-xl shadow-lg' : 'bg-love-light/80 backdrop-blur-md'}`}>
+    <nav className={`sticky top-0 z-50 border-b border-love-pink/30 transition-all font-oldSans ${scrolled ? 'bg-white/85 backdrop-blur-xl shadow-lg' : 'bg-love-light/80 backdrop-blur-md'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className={`flex justify-between ${scrolled ? 'h-14' : 'h-16'} transition-all`}>
           <div className="flex items-center">
@@ -92,7 +92,7 @@ export default function Navbar() {
               <motion.span
                 initial={false}
                 animate={{ color: scrolled ? '#0f172a' : '#1f2937' }}
-                className="font-cursive text-3xl font-bold"
+                className="font-oldCursive text-3xl font-bold"
               >
                 LoveCraft
               </motion.span>

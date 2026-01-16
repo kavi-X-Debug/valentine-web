@@ -14,7 +14,7 @@ export default function Home() {
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="space-y-16 pb-16"
+      className="space-y-16 pb-16 font-oldSans"
     >
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-love-light via-white to-love-light opacity-90 z-10" />
@@ -35,7 +35,7 @@ export default function Home() {
                 Valentine&apos;s 2025 Collection
               </span>
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-cursive text-love-red mb-4 md:mb-6 drop-shadow-sm leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-oldCursive text-love-red mb-4 md:mb-6 drop-shadow-sm leading-tight">
               Make This Valentine&apos;s Unforgettable
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-gray-700 mb-6 md:mb-8 max-w-2xl font-light">
@@ -124,7 +124,7 @@ export default function Home() {
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-cursive text-love-dark mb-4">Featured Collections</h2>
+          <h2 className="text-3xl sm:text-4xl font-oldCursive text-love-dark mb-4">Featured Collections</h2>
           <p className="text-gray-600">Handpicked favorites for your special someone</p>
         </div>
         
@@ -142,7 +142,7 @@ export default function Home() {
               <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
                 <div>
-                  <h3 className="text-white text-xl md:text-2xl font-cursive mb-2">{item.title}</h3>
+                  <h3 className="text-white text-xl md:text-2xl font-oldCursive mb-2">{item.title}</h3>
                   <Link to={item.link} className="text-white/90 text-sm hover:text-white underline">Explore Collection</Link>
                 </div>
               </div>

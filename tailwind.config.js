@@ -19,6 +19,8 @@ export default {
       fontFamily: {
         cursive: ['"Roboto"', 'system-ui', 'sans-serif'],
         sans: ['"Roboto"', 'system-ui', 'sans-serif'],
+        oldCursive: ['"Pacifico"', 'cursive'],
+        oldSans: ['"Poppins"', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
         'hearts-pattern': "url('https://www.transparenttextures.com/patterns/heart-necklace.png')",
