@@ -4,17 +4,17 @@ import { useAuth } from '../context/AuthContext';
 import { Heart } from 'lucide-react';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login, loginWithGoogle, resetPassword, getSignInMethods } = useAuth();
+  const [email, setEmail] = useState(''); // user email input
+  const [password, setPassword] = useState(''); // user password input
+  const [error, setError] = useState(''); // error message to show in UI
+  const [message, setMessage] = useState(''); // success / info message
+  const [loading, setLoading] = useState(false); // prevents duplicate actions
+  const { login, loginWithGoogle, resetPassword, getSignInMethods } = useAuth(); // auth helpers from context
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const cleanedEmail = email.trim();
+    const cleanedEmail = email.trim(); // normalize email input
     try {
       setError('');
       setMessage('');
@@ -55,7 +55,7 @@ export default function Login() {
   }
 
   async function handleForgotPassword() {
-    const cleanedEmail = email.trim();
+    const cleanedEmail = email.trim(); // normalize email before using it
     if (!cleanedEmail) {
       setError('Please enter your email to reset your password');
       return;
@@ -64,7 +64,7 @@ export default function Login() {
       setError('');
       setMessage('');
       setLoading(true);
-      const methods = await getSignInMethods(cleanedEmail);
+      const methods = await getSignInMethods(cleanedEmail); // check how this user signs in
       if (!methods || methods.length === 0) {
         setError('No account found with this email');
         setLoading(false);
@@ -75,10 +75,9 @@ export default function Login() {
         setLoading(false);
         return;
       }
-      await resetPassword(cleanedEmail);
+      await resetPassword(cleanedEmail); // call Firebase sendPasswordResetEmail via AuthContext
       setMessage('Password reset email sent. Please check your inbox and spam folder.');
     } catch (error) {
-      console.error("Reset password error:", error);
       let msg = 'Failed to send password reset email';
       if (error.code === 'auth/user-not-found') msg = 'No account found with this email';
       if (error.code === 'auth/invalid-email') msg = 'Invalid email address';

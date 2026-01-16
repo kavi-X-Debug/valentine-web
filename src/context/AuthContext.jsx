@@ -9,7 +9,7 @@ import {
   sendPasswordResetEmail,
   fetchSignInMethodsForEmail
 } from 'firebase/auth';
-import { updateProfile } from 'firebase/auth';
+import { updateProfile, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const AuthContext = createContext();
@@ -85,6 +85,17 @@ export function AuthProvider({ children }) {
     return fetchSignInMethodsForEmail(auth, email);
   }
 
+  async function changeEmail(newEmail, currentPassword) {
+    const user = auth.currentUser;
+    if (!user || !user.email) {
+      throw new Error('No logged in email user');
+    }
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await updateEmail(user, newEmail);
+    await ensureUserDoc(user, { email: newEmail });
+  }
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -101,7 +112,8 @@ export function AuthProvider({ children }) {
     loginWithGoogle,
     logout,
     resetPassword,
-    getSignInMethods
+    getSignInMethods,
+    changeEmail
   };
 
   return (
