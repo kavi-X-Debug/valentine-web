@@ -35,10 +35,10 @@ export default function Home() {
                 Valentine&apos;s 2025 Collection
               </span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-cursive text-love-red mb-4 md:mb-6 drop-shadow-sm leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-cursive text-love-red mb-4 md:mb-6 drop-shadow-sm leading-tight">
               Make This Valentine&apos;s Unforgettable
             </h1>
-            <p className="text-lg md:text-xl text-gray-700 mb-6 md:mb-8 max-w-2xl font-light">
+            <p className="text-base sm:text-lg md:text-xl text-gray-700 mb-6 md:mb-8 max-w-2xl font-light">
               Discover handcrafted gifts, personalized treasures and romantic surprises designed to
               celebrate your unique love story.
             </p>
@@ -124,11 +124,11 @@ export default function Home() {
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-cursive text-love-dark mb-4">Featured Collections</h2>
+          <h2 className="text-3xl sm:text-4xl font-cursive text-love-dark mb-4">Featured Collections</h2>
           <p className="text-gray-600">Handpicked favorites for your special someone</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
           {[
             { title: "Personalized Jewelry", img: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800", link: "/products?cat=jewelry" },
             { title: "Handmade Crafts", img: "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&q=80&w=800", link: "/products?cat=crafts" },
@@ -142,7 +142,7 @@ export default function Home() {
               <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
                 <div>
-                  <h3 className="text-white text-2xl font-cursive mb-2">{item.title}</h3>
+                  <h3 className="text-white text-xl md:text-2xl font-cursive mb-2">{item.title}</h3>
                   <Link to={item.link} className="text-white/90 text-sm hover:text-white underline">Explore Collection</Link>
                 </div>
               </div>

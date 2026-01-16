@@ -170,45 +170,45 @@ export default function ProductDetails() {
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className="flex items-center border border-gray-300 rounded-lg">
-                <button 
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-3 py-2 text-gray-600 hover:bg-gray-50"
-                >
-                  -
-                </button>
-                <span className="px-3 py-2 font-medium w-12 text-center">{quantity}</span>
-                <button 
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="px-3 py-2 text-gray-600 hover:bg-gray-50"
-                >
-                  +
-                </button>
-              </div>
-              
+            <div className="flex items-center border border-gray-300 rounded-lg">
+              <button 
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="px-3 py-2 text-gray-600 hover:bg-gray-50"
+              >
+                -
+              </button>
+              <span className="px-3 py-2 font-medium w-12 text-center">{quantity}</span>
+              <button 
+                onClick={() => setQuantity(quantity + 1)}
+                className="px-3 py-2 text-gray-600 hover:bg-gray-50"
+              >
+                +
+              </button>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 w-full">
               <button 
                 onClick={handleAddToCart}
                 disabled={added}
-                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors shadow-md flex items-center justify-center space-x-2 ${added ? 'bg-green-600 text-white' : 'bg-love-red text-white hover:bg-red-700'}`}
+                className={`w-full sm:flex-1 px-6 py-3 rounded-lg font-medium transition-colors shadow-md flex items-center justify-center space-x-2 ${added ? 'bg-green-600 text-white' : 'bg-love-red text-white hover:bg-red-700'}`}
               >
                 {added ? <Check className="h-5 w-5" /> : <ShoppingCart className="h-5 w-5" />}
                 <span>{added ? 'Added to Cart' : 'Add to Cart'}</span>
               </button>
               <button
                 onClick={downloadWishImage}
-                className="px-6 py-3 rounded-lg font-medium transition-colors shadow-md flex items-center justify-center space-x-2 bg-white text-love-red border border-love-pink/30 hover:bg-love-light"
+                className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-colors shadow-md flex items-center justify-center space-x-2 bg-white text-love-red border border-love-pink/30 hover:bg-love-light"
               >
                 <Download className="h-5 w-5" />
                 <span>Download Wish Image</span>
               </button>
-              
-              <button className="p-3 border border-gray-300 rounded-lg hover:border-love-red hover:text-love-red transition-colors">
+              <button className="w-full sm:w-auto p-3 border border-gray-300 rounded-lg hover:border-love-red hover:text-love-red transition-colors flex items-center justify-center">
                 <Heart className="h-5 w-5" />
               </button>
             </div>
           </div>
+          </div>
           
-          <div className="flex items-center space-x-6 text-sm text-gray-500 pt-4">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 pt-4">
              <div className="flex items-center"><Check className="h-4 w-4 mr-1 text-green-500" /> In Stock</div>
              <div className="flex items-center"><Check className="h-4 w-4 mr-1 text-green-500" /> Free Shipping</div>
           </div>
