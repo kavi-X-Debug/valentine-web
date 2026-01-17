@@ -446,26 +446,28 @@ export default function Home() {
                 className="bg-white rounded-2xl shadow-sm border border-love-pink/30 overflow-hidden flex flex-col justify-between"
               >
                 <div>
-                  <div className="w-full h-40 sm:h-44 mb-4 overflow-hidden">
+                  <div className="w-full h-40 sm:h-44 overflow-hidden">
                     <img
                       src={idea.img}
                       alt={idea.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                   </div>
-                  <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-love-light text-love-red mb-3 ml-1">
-                    <Heart className="h-4 w-4" />
+                  <div className="px-6 pt-5 pb-4">
+                    <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-love-light text-love-red mb-3">
+                      <Heart className="h-4 w-4" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-love-dark mb-2">
+                      {idea.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {idea.description}
+                    </p>
                   </div>
-                  <h3 className="text-lg font-semibold text-love-dark mb-2">
-                    {idea.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {idea.description}
-                  </p>
                 </div>
                 <Link
                   to={idea.link}
-                  className="inline-flex items-center text-sm font-medium text-love-red hover:text-red-700 mt-3 px-6 pb-5"
+                  className="inline-flex items-center text-sm font-medium text-love-red hover:text-red-700 mt-1 px-6 pb-5"
                 >
                   Explore matching gifts
                   <ArrowRight className="ml-1 h-4 w-4" />
