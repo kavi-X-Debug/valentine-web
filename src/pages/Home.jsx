@@ -25,17 +25,20 @@ const dateIdeas = [
   {
     title: 'Stay‑in movie night kit',
     description: 'Cozy blankets, snacks and a surprise gift waiting on the sofa.',
-    link: '/products?cat=home'
+    link: '/products?cat=home',
+    img: 'https://images.unsplash.com/photo-1514924013411-cbf25faa35bb?auto=format&fit=crop&q=80&w=900'
   },
   {
     title: 'Memory box of your story',
     description: 'Fill a keepsake box with photos, tickets and a custom note.',
-    link: '/products?cat=gifts'
+    link: '/products?cat=gifts',
+    img: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&q=80&w=900'
   },
   {
     title: 'Breakfast‑in‑bed surprise',
     description: 'Start the day with coffee, flowers and a personalised treat.',
-    link: '/products?cat=food'
+    link: '/products?cat=food',
+    img: 'https://images.unsplash.com/photo-1517677129300-07b130802f46?auto=format&fit=crop&q=80&w=900'
   }
 ];
 
@@ -440,10 +443,17 @@ export default function Home() {
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.4, delay: index * 0.08 }}
                 whileHover={{ y: -8, scale: 1.02 }}
-                className="bg-white rounded-2xl shadow-sm border border-love-pink/30 px-6 py-6 flex flex-col justify-between"
+                className="bg-white rounded-2xl shadow-sm border border-love-pink/30 overflow-hidden flex flex-col justify-between"
               >
                 <div>
-                  <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-love-light text-love-red mb-3">
+                  <div className="w-full h-40 sm:h-44 mb-4 overflow-hidden">
+                    <img
+                      src={idea.img}
+                      alt={idea.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  </div>
+                  <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-love-light text-love-red mb-3 ml-1">
                     <Heart className="h-4 w-4" />
                   </div>
                   <h3 className="text-lg font-semibold text-love-dark mb-2">
@@ -455,7 +465,7 @@ export default function Home() {
                 </div>
                 <Link
                   to={idea.link}
-                  className="inline-flex items-center text-sm font-medium text-love-red hover:text-red-700 mt-2"
+                  className="inline-flex items-center text-sm font-medium text-love-red hover:text-red-700 mt-3 px-6 pb-5"
                 >
                   Explore matching gifts
                   <ArrowRight className="ml-1 h-4 w-4" />
