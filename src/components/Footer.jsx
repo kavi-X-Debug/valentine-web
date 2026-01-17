@@ -40,9 +40,33 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold text-love-dark mb-4">Stay in Love</h3>
             <div className="flex space-x-4 mb-4">
-              <a href="#" className="text-gray-400 hover:text-love-red transition-colors"><Instagram className="h-5 w-5" /></a>
-              <a href="#" className="text-gray-400 hover:text-love-red transition-colors"><Facebook className="h-5 w-5" /></a>
-              <a href="#" className="text-gray-400 hover:text-love-red transition-colors"><Twitter className="h-5 w-5" /></a>
+              <a
+                href="https://www.instagram.com/accounts/emailsignup/"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Sign up for Instagram"
+                className="text-gray-400 hover:text-love-red transition-colors"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a
+                href="https://www.facebook.com/r.php"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Sign up for Facebook"
+                className="text-gray-400 hover:text-love-red transition-colors"
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a
+                href="https://twitter.com/i/flow/signup"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Sign up for Twitter"
+                className="text-gray-400 hover:text-love-red transition-colors"
+              >
+                <Twitter className="h-5 w-5" />
+              </a>
             </div>
             <p className="text-xs text-gray-500">
               &copy; {new Date().getFullYear()} LoveCraft. All rights reserved.

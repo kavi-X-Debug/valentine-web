@@ -157,15 +157,47 @@ export default function Products() {
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={toggleFilters}
-              className="p-2 rounded-lg bg-white border border-love-pink/30 text-gray-600 hover:text-love-red hover:border-love-red transition-colors"
-              aria-label="Open Filters"
+              className="inline-flex items-center space-x-2 px-3 py-2 rounded-lg bg-white border border-love-pink/30 text-gray-600 hover:text-love-red hover:border-love-red transition-colors"
+              aria-label="Toggle filters"
               title="Filters"
             >
               <Filter className="h-5 w-5" />
+              <span className="text-sm font-medium">Filters</span>
             </button>
           </div>
-          <div className={`bg-white p-4 rounded-xl shadow-sm border border-love-pink/20 mb-6 ${filterOpen ? 'block' : 'hidden'} md:block`}>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className={`bg-white p-4 rounded-xl shadow-sm border border-love-pink/20 mb-6 ${filterOpen ? 'block' : 'hidden'}`}>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <span className="text-sm font-semibold text-love-dark">Filter & Sort</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilter('All');
+                    setSearch('');
+                    setSort('none');
+                    setMinPrice('');
+                    setMaxPrice('');
+                    setPricePreset('none');
+                    setOnlyFavorites(false);
+                    setPage(1);
+                  }}
+                  className="self-start text-xs px-3 py-1 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50"
+                >
+                  Clear all
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  value={filter}
+                  onChange={(e) => {
+                    setFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
                 <input
                   type="text"
                   placeholder="Search products..."
