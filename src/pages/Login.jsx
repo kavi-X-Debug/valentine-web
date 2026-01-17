@@ -9,7 +9,7 @@ export default function Login() {
   const [error, setError] = useState(''); // error message to show in UI
   const [message, setMessage] = useState(''); // success / info message
   const [loading, setLoading] = useState(false); // prevents duplicate actions
-  const { login, loginWithGoogle, resetPassword, getSignInMethods } = useAuth(); // auth helpers from context
+  const { login, loginWithGoogle } = useAuth(); // auth helpers from context
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
@@ -55,35 +55,7 @@ export default function Login() {
   }
 
   async function handleForgotPassword() {
-    const cleanedEmail = email.trim(); // normalize email before using it
-    if (!cleanedEmail) {
-      setError('Please enter your email to reset your password');
-      return;
-    }
-    try {
-      setError('');
-      setMessage('');
-      setLoading(true);
-      const methods = await getSignInMethods(cleanedEmail); // check how this user signs in
-      if (!methods || methods.length === 0) {
-        setError('No account found with this email');
-        setLoading(false);
-        return;
-      }
-      if (!methods.includes('password')) {
-        setError('This account uses Google sign-in. Please sign in with Google.');
-        setLoading(false);
-        return;
-      }
-      await resetPassword(cleanedEmail); // call Firebase sendPasswordResetEmail via AuthContext
-      setMessage('Password reset email sent. Please check your inbox and spam folder.');
-    } catch (error) {
-      let msg = 'Failed to send password reset email';
-      if (error.code === 'auth/user-not-found') msg = 'No account found with this email';
-      if (error.code === 'auth/invalid-email') msg = 'Invalid email address';
-      setError(msg);
-    }
-    setLoading(false);
+    navigate('/reset-password');
   }
 
   return (

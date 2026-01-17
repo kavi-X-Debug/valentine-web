@@ -12,6 +12,7 @@ import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ResetPassword from './pages/ResetPassword';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import Contact from './pages/Contact';
@@ -45,6 +46,7 @@ function App() {
               <Route path="/order-success" element={<OrderSuccess />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/faq" element={<Faq />} />
               <Route path="/wish" element={<Wish />} />
