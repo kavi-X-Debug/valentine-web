@@ -7,17 +7,44 @@ const testimonials = [
   {
     names: 'Aiden & Maya',
     location: 'London, UK',
-    message: 'The personalised necklace arrived beautifully packaged and right on time for our anniversary.'
+    avatar: 'https://images.unsplash.com/photo-1517840933442-d2d1a05edb75?auto=format&fit=crop&q=80&w=400',
+    message:
+      'I ordered a personalised necklace and a handwritten card. The box looked like a mini proposal and arrived the day before our anniversary.'
   },
   {
     names: 'Liam & Noor',
     location: 'Dubai, UAE',
-    message: 'We loved how easy it was to customise everything. It felt like a gift made just for us.'
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400',
+    message:
+      'We built a memory box with photos, tickets and a custom engraving. It felt like something we would have spent hours DIY-ing, but it came ready to gift.'
   },
   {
     names: 'Ethan & Chloe',
     location: 'Toronto, CA',
-    message: 'Fast delivery, warm support and such thoughtful designs. This became our new go‑to gift shop.'
+    avatar: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&q=80&w=400',
+    message:
+      'The date-night bundle had everything: candles, snacks and a small keepsake. Shipping updates were clear and the unboxing felt premium, not generic.'
+  },
+  {
+    names: 'Daniel & Priya',
+    location: 'Sydney, AU',
+    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=400',
+    message:
+      'We were late planners and still managed to send a personalised gift across the city. She loved the custom star map and we framed it the same night.'
+  },
+  {
+    names: 'Jonah & Sofia',
+    location: 'New York, US',
+    avatar: 'https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&q=80&w=400',
+    message:
+      'I picked a couple set and added our initials. The sizes were accurate, the fabric felt good quality and the little note inside made her tear up.'
+  },
+  {
+    names: 'Arjun & Meera',
+    location: 'Bangalore, IN',
+    avatar: 'https://images.unsplash.com/photo-1544723795-432537d12f6c?auto=format&fit=crop&q=80&w=400',
+    message:
+      'Customer support helped me swap the delivery address last minute. The spa gift box smelled incredible and looked exactly like the photos.'
   }
 ];
 
@@ -383,9 +410,13 @@ export default function Home() {
               className="bg-love-light/60 border border-love-pink/30 rounded-3xl px-6 sm:px-10 py-8 sm:py-10 shadow-sm"
             >
               <div className="flex flex-col gap-4 sm:gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-love-red/80 text-white flex items-center justify-center text-lg font-semibold">
-                    <Heart className="h-5 w-5" />
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-200 flex-shrink-0">
+                    <img
+                      src={testimonials[activeTestimonial].avatar}
+                      alt={testimonials[activeTestimonial].names}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="text-left">
                     <p className="font-semibold text-love-dark text-sm sm:text-base">
