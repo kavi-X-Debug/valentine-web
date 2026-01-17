@@ -10,7 +10,8 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signup, loginWithGoogle } = useAuth();
+  const [info, setInfo] = useState('');
+  const { signup, loginWithGoogle, sendWelcomeEmail } = useAuth();
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
@@ -23,8 +24,15 @@ export default function Signup() {
 
     try {
       setError('');
+      setInfo('');
       setLoading(true);
-      await signup(cleanedEmail, password, { displayName: name });
+      const cred = await signup(cleanedEmail, password, { displayName: name });
+      if (cred && cred.user) {
+        try {
+          await sendWelcomeEmail(cred.user);
+          setInfo('We have sent a welcome email. Please check your inbox.');
+        } catch {}
+      }
       navigate('/profile');
     } catch (error) {
       console.error("Signup error:", error);
@@ -74,6 +82,7 @@ export default function Signup() {
         </div>
 
         {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
+        {info && !error && <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="status">{info}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

@@ -7,7 +7,8 @@ import {
   signInWithPopup, 
   signOut,
   sendPasswordResetEmail,
-  fetchSignInMethodsForEmail
+  fetchSignInMethodsForEmail,
+  sendEmailVerification
 } from 'firebase/auth';
 import { updateProfile, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -85,6 +86,15 @@ export function AuthProvider({ children }) {
     return fetchSignInMethodsForEmail(auth, email);
   }
 
+  function sendWelcomeEmail(user) {
+    if (!user) return Promise.resolve();
+    const actionCodeSettings = {
+      url: 'https://valentine-webp.vercel.app/login',
+      handleCodeInApp: false
+    };
+    return sendEmailVerification(user, actionCodeSettings);
+  }
+
   async function changeEmail(newEmail, currentPassword) {
     const user = auth.currentUser;
     if (!user || !user.email) {
@@ -113,6 +123,7 @@ export function AuthProvider({ children }) {
     logout,
     resetPassword,
     getSignInMethods,
+    sendWelcomeEmail,
     changeEmail
   };
 
