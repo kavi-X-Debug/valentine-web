@@ -222,6 +222,18 @@ const toTags = (cat, name) => {
   }
   return tags.join(',');
 };
+const makeDescription = (cat, name, index) => {
+  const base = descriptions[cat] || "Specially curated for romantic moments.";
+  const extras = [
+    "Perfect for a cozy date night.",
+    "A sweet way to say I love you.",
+    "Ideal for surprising your favorite person.",
+    "Adds a little magic to your evening.",
+    "Thoughtful pick for unforgettable moments."
+  ];
+  const extra = extras[index % extras.length];
+  return `${name} – ${base} ${extra}`;
+};
 export const MOCK_PRODUCTS = categories.flatMap((cat, ci) =>
   Array.from({ length: 20 }, (_, i) => ({
     id: ci * 100 + i + 1,
@@ -229,7 +241,7 @@ export const MOCK_PRODUCTS = categories.flatMap((cat, ci) =>
     price: Number((basePrices[cat] + (i % 10) * 2 + ci * 3).toFixed(2)),
     category: cat,
     image: `https://placehold.co/800x800/ffffff/cc1d4f/png?text=${encodeURIComponent(names[cat][i])}`,
-    description: descriptions[cat],
+    description: makeDescription(cat, names[cat][i], i),
     tags: toTags(cat, names[cat][i]).split(',')
   }))
 );
