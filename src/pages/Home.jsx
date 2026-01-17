@@ -1,13 +1,58 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Gift, Truck, ShieldCheck, Heart } from 'lucide-react';
 
+const testimonials = [
+  {
+    names: 'Aiden & Maya',
+    location: 'London, UK',
+    message: 'The personalised necklace arrived beautifully packaged and right on time for our anniversary.'
+  },
+  {
+    names: 'Liam & Noor',
+    location: 'Dubai, UAE',
+    message: 'We loved how easy it was to customise everything. It felt like a gift made just for us.'
+  },
+  {
+    names: 'Ethan & Chloe',
+    location: 'Toronto, CA',
+    message: 'Fast delivery, warm support and such thoughtful designs. This became our new go‑to gift shop.'
+  }
+];
+
+const dateIdeas = [
+  {
+    title: 'Stay‑in movie night kit',
+    description: 'Cozy blankets, snacks and a surprise gift waiting on the sofa.',
+    link: '/products?cat=home'
+  },
+  {
+    title: 'Memory box of your story',
+    description: 'Fill a keepsake box with photos, tickets and a custom note.',
+    link: '/products?cat=gifts'
+  },
+  {
+    title: 'Breakfast‑in‑bed surprise',
+    description: 'Start the day with coffee, flowers and a personalised treat.',
+    link: '/products?cat=food'
+  }
+];
+
 export default function Home() {
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: 0.8 } }
   };
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActiveTestimonial(prev => (prev + 1) % testimonials.length);
+    }, 7000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <motion.div 
@@ -308,6 +353,115 @@ export default function Home() {
                 Our artisans prepare your order and we ship it with care right to their doorstep.
               </p>
             </motion.div>
+          </div>
+        </div>
+      </motion.section>
+
+      <motion.section
+        className="py-16 bg-white"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7 }}
+      >
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-oldCursive text-love-dark mb-3">Couples Who Gave With LoveCraft</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
+              Stories from real couples who turned small gestures into unforgettable memories.
+            </p>
+          </div>
+          <div className="relative">
+            <motion.div
+              key={activeTestimonial}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="bg-love-light/60 border border-love-pink/30 rounded-3xl px-6 sm:px-10 py-8 sm:py-10 shadow-sm"
+            >
+              <div className="flex flex-col gap-4 sm:gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-love-red/80 text-white flex items-center justify-center text-lg font-semibold">
+                    <Heart className="h-5 w-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-love-dark text-sm sm:text-base">
+                      {testimonials[activeTestimonial].names}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-500">
+                      {testimonials[activeTestimonial].location}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+                  {testimonials[activeTestimonial].message}
+                </p>
+              </div>
+            </motion.div>
+            <div className="mt-5 flex items-center justify-center gap-2">
+              {testimonials.map((_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => setActiveTestimonial(index)}
+                  className={`h-2.5 rounded-full transition-all ${
+                    index === activeTestimonial
+                      ? 'w-6 bg-love-red'
+                      : 'w-2 bg-gray-300'
+                  }`}
+                  aria-label={`Show testimonial ${index + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
+      <motion.section
+        className="py-16 bg-love-light/30"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7 }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-oldCursive text-love-dark mb-3">Date Night Ideas With LoveCraft</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
+              Pair your next surprise with ready‑to‑gift ideas that keep the romance simple and sweet.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {dateIdeas.map((idea, index) => (
+              <motion.div
+                key={idea.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
+                whileHover={{ y: -8, scale: 1.02 }}
+                className="bg-white rounded-2xl shadow-sm border border-love-pink/30 px-6 py-6 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-love-light text-love-red mb-3">
+                    <Heart className="h-4 w-4" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-love-dark mb-2">
+                    {idea.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    {idea.description}
+                  </p>
+                </div>
+                <Link
+                  to={idea.link}
+                  className="inline-flex items-center text-sm font-medium text-love-red hover:text-red-700 mt-2"
+                >
+                  Explore matching gifts
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </motion.div>
+            ))}
           </div>
         </div>
       </motion.section>
