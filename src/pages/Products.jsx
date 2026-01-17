@@ -153,26 +153,6 @@ export default function Products() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <aside className="hidden md:block order-2 md:order-1 md:col-span-1">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-love-pink/20">
-            <h2 className="text-lg font-semibold text-love-dark mb-4">Categories</h2>
-            <div className="space-y-2">
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => { setFilter(cat); setPage(1); }}
-                  className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === cat 
-                      ? 'bg-love-red text-white shadow-md' 
-                      : 'bg-white border border-gray-200 text-gray-700 hover:bg-love-light'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-        </aside>
         <section className="order-1 md:order-2 md:col-span-3">
           <div className="flex items-center justify-between mb-4">
             <button
@@ -236,31 +216,6 @@ export default function Products() {
                 />
               </div>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="md:col-span-2">
-                  <div className="text-sm font-medium text-gray-700 mb-2">Tags</div>
-                  <div className="flex flex-wrap gap-2">
-                    {allTags.map(t => {
-                      const active = selectedTags.includes(t);
-                      return (
-                        <button
-                          key={t}
-                          onClick={() => {
-                            setSelectedTags(prev => {
-                              const next = active ? prev.filter(x => x !== t) : [...prev, t];
-                              return next;
-                            });
-                            setPage(1);
-                          }}
-                          className={`px-3 py-1 rounded-full text-sm border ${
-                            active ? 'bg-love-red text-white border-love-red' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {t}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
                 <div>
                   <div className="text-sm font-medium text-gray-700 mb-2">Quick Price</div>
                   <div className="space-y-2">
