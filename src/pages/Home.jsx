@@ -128,7 +128,13 @@ export default function Home() {
           <p className="text-gray-600">Handpicked favorites for your special someone</p>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.7 }}
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8"
+        >
           {[
             { title: "Personalized Jewelry", img: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800", link: "/products?cat=jewelry" },
             { title: "Handmade Crafts", img: "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&q=80&w=800", link: "/products?cat=crafts" },
@@ -136,6 +142,10 @@ export default function Home() {
           ].map((item, index) => (
             <motion.div 
               key={index}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
               whileHover={{ y: -10 }}
               className="relative group overflow-hidden rounded-2xl shadow-md aspect-[4/5]"
             >
@@ -148,37 +158,159 @@ export default function Home() {
               </div>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
-      {/* Why Choose Us */}
-      <section className="bg-white py-16">
+      <motion.section 
+        className="bg-white py-16"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7 }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-oldCursive text-love-dark mb-3">Why Couples Choose LoveCraft</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
+              From the first idea to the final unboxing moment, we craft every detail with care.
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="p-6">
+            <motion.div 
+              whileHover={{ y: -6, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18 }}
+              className="p-6 rounded-2xl border border-love-pink/20 bg-white shadow-sm"
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-love-light text-love-red mb-4">
                 <Gift className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Unique Handmade Gifts</h3>
               <p className="text-gray-600">Each item is crafted with love and care, ensuring a unique gift for your partner.</p>
-            </div>
-            <div className="p-6">
+            </motion.div>
+            <motion.div 
+              whileHover={{ y: -6, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.03 }}
+              className="p-6 rounded-2xl border border-love-pink/20 bg-white shadow-sm"
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-love-light text-love-red mb-4">
                 <Truck className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Fast & Secure Delivery</h3>
               <p className="text-gray-600">We ensure your gifts arrive on time and in perfect condition for the big day.</p>
-            </div>
-            <div className="p-6">
+            </motion.div>
+            <motion.div 
+              whileHover={{ y: -6, scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.06 }}
+              className="p-6 rounded-2xl border border-love-pink/20 bg-white shadow-sm"
+            >
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-love-light text-love-red mb-4">
                 <ShieldCheck className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Secure Payments</h3>
               <p className="text-gray-600">Shop with confidence using our secure payment gateways.</p>
-            </div>
+            </motion.div>
+          </div>
+          <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center text-sm sm:text-base">
+            <motion.div 
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5 }}
+              className="px-4 py-3 rounded-xl bg-love-light/50 border border-love-pink/30"
+            >
+              <p className="text-2xl sm:text-3xl font-bold text-love-red mb-1">5k+</p>
+              <p className="text-gray-600">Gifts delivered worldwide</p>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="px-4 py-3 rounded-xl bg-love-light/50 border border-love-pink/30"
+            >
+              <p className="text-2xl sm:text-3xl font-bold text-love-red mb-1">4.9/5</p>
+              <p className="text-gray-600">Average rating from happy couples</p>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="px-4 py-3 rounded-xl bg-love-light/50 border border-love-pink/30"
+            >
+              <p className="text-2xl sm:text-3xl font-bold text-love-red mb-1">24/7</p>
+              <p className="text-gray-600">Support for last‑minute surprises</p>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
+
+      <motion.section
+        className="py-16 bg-love-light/40"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7 }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-oldCursive text-love-dark mb-3">How LoveCraft Works</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base">
+              A simple three‑step journey from idea to unboxing that keeps the romance effortless.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5 }}
+              whileHover={{ y: -8, scale: 1.02 }}
+              className="relative bg-white rounded-2xl shadow-sm border border-love-pink/30 px-6 py-8"
+            >
+              <div className="absolute -top-4 left-6 w-9 h-9 rounded-full bg-love-red text-white flex items-center justify-center text-sm font-semibold shadow-lg">
+                1
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-love-dark mb-2">Choose the perfect gift</h3>
+              <p className="text-gray-600 text-sm">
+                Browse curated collections for every love story, from subtle gestures to grand surprises.
+              </p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              whileHover={{ y: -8, scale: 1.02 }}
+              className="relative bg-white rounded-2xl shadow-sm border border-love-pink/30 px-6 py-8"
+            >
+              <div className="absolute -top-4 left-6 w-9 h-9 rounded-full bg-love-red text-white flex items-center justify-center text-sm font-semibold shadow-lg">
+                2
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-love-dark mb-2">Personalise every detail</h3>
+              <p className="text-gray-600 text-sm">
+                Add names, dates, or secret messages so your gift feels like it was made just for them.
+              </p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              whileHover={{ y: -8, scale: 1.02 }}
+              className="relative bg-white rounded-2xl shadow-sm border border-love-pink/30 px-6 py-8"
+            >
+              <div className="absolute -top-4 left-6 w-9 h-9 rounded-full bg-love-red text-white flex items-center justify-center text-sm font-semibold shadow-lg">
+                3
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-love-dark mb-2">We craft and deliver</h3>
+              <p className="text-gray-600 text-sm">
+                Our artisans prepare your order and we ship it with care right to their doorstep.
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </motion.section>
     </motion.div>
   );
 }
