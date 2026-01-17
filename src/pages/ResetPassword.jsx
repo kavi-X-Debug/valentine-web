@@ -8,33 +8,27 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { resetPassword, getSignInMethods } = useAuth();
+  const { resetPassword } = useAuth();
 
   async function handleSubmit(e) {
     e.preventDefault();
     const cleanedEmail = email.trim();
+    if (!cleanedEmail) {
+      setError('Please enter your email to reset your password');
+      return;
+    }
     try {
       setError('');
       setMessage('');
       setLoading(true);
-      const methods = await getSignInMethods(cleanedEmail);
-      if (!methods || methods.length === 0) {
-        setError('No account found with this email');
-        setLoading(false);
-        return;
-      }
-      if (!methods.includes('password')) {
-        setError('This account uses Google sign-in. Please sign in with Google.');
-        setLoading(false);
-        return;
-      }
       await resetPassword(cleanedEmail);
-      setMessage('Password reset email sent. Please check your inbox and spam folder.');
+      setMessage('If an account exists for this email, a reset link has been sent.');
     } catch (error) {
-      let msg = 'Failed to send password reset email';
-      if (error.code === 'auth/user-not-found') msg = 'No account found with this email';
-      if (error.code === 'auth/invalid-email') msg = 'Invalid email address';
-      setError(msg);
+      if (error.code === 'auth/invalid-email') {
+        setError('Invalid email address');
+      } else {
+        setMessage('If an account exists for this email, a reset link has been sent.');
+      }
     }
     setLoading(false);
   }
@@ -97,4 +91,3 @@ export default function ResetPassword() {
     </div>
   );
 }
-

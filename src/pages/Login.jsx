@@ -24,10 +24,10 @@ export default function Login() {
     } catch (error) {
       console.error("Login error:", error);
       let msg = 'Failed to log in';
-      if (error.code === 'auth/wrong-password') msg = 'Incorrect password';
-      if (error.code === 'auth/user-not-found') msg = 'No account found with this email';
+      if (error.code === 'auth/wrong-password') msg = 'Incorrect email or password';
+      if (error.code === 'auth/user-not-found') msg = 'Incorrect email or password';
       if (error.code === 'auth/invalid-email') msg = 'Invalid email address';
-      if (error.code === 'auth/invalid-credential') msg = 'Invalid credentials';
+      if (error.code === 'auth/invalid-credential') msg = 'Incorrect email or password';
       setError(msg);
     }
     setLoading(false);
