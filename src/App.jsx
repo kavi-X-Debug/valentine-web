@@ -19,7 +19,6 @@ const Admin = lazy(() => import('./pages/Admin'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Faq = lazy(() => import('./pages/Faq'));
-const Wish = lazy(() => import('./pages/Wish'));
 const Returns = lazy(() => import('./pages/Returns'));
 const Categories = lazy(() => import('./pages/Categories'));
 
@@ -57,7 +56,6 @@ function App() {
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/faq" element={<Faq />} />
-                <Route path="/wish" element={<Wish />} />
                 <Route path="/returns" element={<Returns />} />
                 <Route 
                   path="/admin" 

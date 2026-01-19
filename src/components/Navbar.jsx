@@ -99,13 +99,18 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
             <NavLink to="/">Home</NavLink>
             <NavLink to="/products">Gifts</NavLink>
             <NavLink to="/categories">Categories</NavLink>
             <NavLink to="/contact">Contact</NavLink>
-            <NavLink to="/wish">Wish</NavLink>
+            <a
+              href="/valentine-surprise/index.html"
+              className={`${linkBase} hover:text-love-red transition-colors`}
+            >
+              <span>Wish</span>
+              <span className="absolute left-0 -bottom-1 h-0.5 bg-gradient-to-r from-love-red to-love-pink w-0 group-hover:w-full transition-all duration-300" />
+            </a>
             <Link to="/cart" className="relative group text-love-dark hover:text-love-red transition-colors">
               <motion.div whileHover={{ scale: 1.1 }} className="relative">
                 <ShoppingCart className="h-6 w-6" />
@@ -168,7 +173,7 @@ export default function Navbar() {
               <Link to="/products" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Gifts</Link>
               <Link to="/categories" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Categories</Link>
               <Link to="/contact" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Contact</Link>
-              <Link to="/wish" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Wish</Link>
+              <a href="/valentine-surprise/index.html" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Wish</a>
               <Link to="/cart" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Cart</Link>
               {currentUser ? (
                 <>
