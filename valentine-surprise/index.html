@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Valentine Surprise</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="A one-click Valentine surprise with a romantic reveal." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Playfair+Display:wght@600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="heart-bg">
+    <span class="heart heart-1"></span>
+    <span class="heart heart-2"></span>
+    <span class="heart heart-3"></span>
+    <span class="heart heart-4"></span>
+    <span class="heart heart-5"></span>
+  </div>
+
+  <main class="page">
+    <section class="screen screen-teaser screen-active" aria-label="Valentine teaser">
+      <div class="card card-teaser">
+        <h1 class="title">
+          Someone has a Valentine message for you <span aria-hidden="true">❤️</span>
+        </h1>
+        <p class="subtitle">
+          When you are ready for a little surprise, tap the button below.
+        </p>
+        <button id="revealButton" class="btn-primary">
+          <span class="btn-label">Click to Reveal 💝</span>
+          <span class="btn-glow"></span>
+        </button>
+      </div>
+    </section>
+
+    <section class="screen screen-message" aria-label="Valentine message" aria-hidden="true">
+      <div class="card card-message">
+        <div class="message-header">Valentine Surprise</div>
+        <p class="message-to" id="receiverName"></p>
+        <p class="message-body" id="messageText"></p>
+        <p class="message-from" id="senderName"></p>
+
+        <button id="backButton" class="btn-secondary">
+          Back to Teaser
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
