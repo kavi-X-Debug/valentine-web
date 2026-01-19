@@ -42,11 +42,6 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite }) {
             {product.name}
           </h3>
         </Link>
-        {product.description && (
-          <p className="text-xs text-gray-500 mb-3 h-10 overflow-hidden">
-            {product.description}
-          </p>
-        )}
         <div className="flex flex-col mt-auto space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xl font-bold text-love-dark">${product.price.toFixed(2)}</span>
