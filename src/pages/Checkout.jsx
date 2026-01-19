@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, setDoc, increment } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import emailjs from '@emailjs/browser';
 
@@ -58,8 +58,21 @@ export default function Checkout() {
         createdAt: serverTimestamp()
       };
 
-      // Add to Firestore
       const docRef = await addDoc(collection(db, 'orders'), order);
+
+      try {
+        const amount = Number(cartTotal);
+        if (!Number.isNaN(amount) && amount !== 0) {
+          const statsRef = doc(db, 'stats', 'global');
+          await setDoc(
+            statsRef,
+            { totalRevenue: increment(amount) },
+            { merge: true }
+          );
+        }
+      } catch (err) {
+        console.error('Failed to update revenue stats after order creation', err);
+      }
 
       // Send Email Notification
       try {

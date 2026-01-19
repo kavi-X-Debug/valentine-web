@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { db } from '../firebase/config';
-import { collection, onSnapshot, orderBy, query, updateDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query, updateDoc, doc, setDoc, increment } from 'firebase/firestore';
 import { Search, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
 
@@ -129,6 +129,7 @@ export default function Admin() {
     let recentOrders = 0;
     orders.forEach(o => {
       const status = (o.status || 'pending').toLowerCase();
+      const amount = Number(o.total || 0);
       statusCounts[status] = (statusCounts[status] || 0) + 1;
       const raw = o.createdAt;
       let d;
@@ -143,12 +144,16 @@ export default function Admin() {
           byDay[key] = { date: key, orders: 0, revenue: 0 };
         }
         byDay[key].orders += 1;
-        byDay[key].revenue += Number(o.total || 0);
+        if (status !== 'cancelled') {
+          byDay[key].revenue += amount;
+        }
         if (d >= sevenDaysAgo) {
           recentOrders += 1;
         }
       }
-      totalRevenue += Number(o.total || 0);
+      if (status !== 'cancelled') {
+        totalRevenue += amount;
+      }
     });
     const daily = Object.values(byDay).sort((a, b) => (a.date > b.date ? 1 : -1));
     const dailyData = daily.slice(-7);
@@ -165,12 +170,36 @@ export default function Admin() {
     };
   }, [orders]);
 
-  async function handleStatusChange(orderId, nextStatus) {
-    if (!orderId || !nextStatus) return;
-    setUpdatingId(orderId);
+  async function handleStatusChange(order, nextStatus) {
+    if (!order || !order.id || !nextStatus) return;
+    const currentStatus = (order.status || 'pending').toLowerCase();
+    const next = nextStatus.toLowerCase();
+    if (currentStatus === next) return;
+    setUpdatingId(order.id);
     try {
-      const ref = doc(db, 'orders', orderId);
-      await updateDoc(ref, { status: nextStatus });
+      const ref = doc(db, 'orders', order.id);
+      await updateDoc(ref, { status: next });
+      const amount = Number(order.total || 0);
+      if (!Number.isNaN(amount) && amount !== 0) {
+        let delta = 0;
+        if (currentStatus !== 'cancelled' && next === 'cancelled') {
+          delta = -amount;
+        } else if (currentStatus === 'cancelled' && next !== 'cancelled') {
+          delta = amount;
+        }
+        if (delta !== 0) {
+          try {
+            const statsRef = doc(db, 'stats', 'global');
+            await setDoc(
+              statsRef,
+              { totalRevenue: increment(delta) },
+              { merge: true }
+            );
+          } catch (err) {
+            console.error('Failed to update revenue stats', err);
+          }
+        }
+      }
     } finally {
       setUpdatingId(null);
     }
@@ -428,7 +457,7 @@ export default function Admin() {
                                 className="border border-gray-300 rounded-lg text-xs px-2 py-1 focus:ring-1 focus:ring-love-red focus:border-transparent outline-none"
                                 value={status}
                                 disabled={updatingId === order.id}
-                                onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                onChange={(e) => handleStatusChange(order, e.target.value)}
                               >
                                 {STATUS_OPTIONS.map(opt => (
                                   <option key={opt} value={opt}>
