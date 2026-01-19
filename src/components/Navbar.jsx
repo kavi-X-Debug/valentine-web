@@ -121,7 +121,7 @@ export default function Navbar() {
               <div className="relative group">
                 <button className="flex items-center space-x-2 text-love-dark hover:text-love-red">
                   {(profilePhotoURL || currentUser.photoURL) ? (
-                    <img src={profilePhotoURL || currentUser.photoURL} alt="Avatar" className="h-8 w-8 rounded-full object-cover border border-love-pink/30" />
+                    <img src={profilePhotoURL || currentUser.photoURL} alt="Avatar" loading="lazy" className="h-8 w-8 rounded-full object-cover border border-love-pink/30" />
                   ) : (
                     <User className="h-6 w-6" />
                   )}

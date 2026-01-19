@@ -252,7 +252,7 @@ export default function Profile() {
                     transition={{ type: 'spring', stiffness: 260, damping: 18 }}
                   >
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      <img src={avatarUrl} alt="Avatar" loading="lazy" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                     )}

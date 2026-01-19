@@ -2,9 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Gift, Truck, ShieldCheck, Heart } from 'lucide-react';
-import movieNightImg from '../../Images/Gemini_Generated_Image_wcjntpwcjntpwcjn.png';
-import memoryBoxImg from '../../Images/Gemini_Generated_Image_szps2szps2szps2s.png';
-import breakfastImg from '../../Images/Gemini_Generated_Image_9v9d889v9d889v9d.png';
 
 const testimonials = [
   {
@@ -56,19 +53,19 @@ const dateIdeas = [
     title: 'Stay‑in movie night kit',
     description: 'Cozy blankets, snacks and a surprise gift waiting on the sofa.',
     link: '/products?cat=home',
-    img: movieNightImg
+    img: 'https://images.unsplash.com/photo-1514924013411-cbf25faa35bb?auto=format&fit=crop&q=80&w=900'
   },
   {
     title: 'Memory box of your story',
     description: 'Fill a keepsake box with photos, tickets and a custom note.',
     link: '/products?cat=gifts',
-    img: memoryBoxImg
+    img: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&q=80&w=900'
   },
   {
     title: 'Breakfast‑in‑bed surprise',
     description: 'Start the day with coffee, flowers and a personalised treat.',
     link: '/products?cat=food',
-    img: breakfastImg
+    img: 'https://images.unsplash.com/photo-1517677129300-07b130802f46?auto=format&fit=crop&q=80&w=900'
   }
 ];
 
@@ -161,6 +158,7 @@ export default function Home() {
               <img
                 src="https://images.unsplash.com/photo-1518895949257-7621c3c786d4?auto=format&fit=crop&q=80&w=900"
                 alt="Romantic gift set"
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
             </motion.div>
@@ -173,6 +171,7 @@ export default function Home() {
               <img
                 src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=600"
                 alt="Jewelry gift"
+                loading="lazy"
                 className="w-full h-28 object-cover"
               />
               <div className="px-3 py-2">
@@ -227,7 +226,7 @@ export default function Home() {
               whileHover={{ y: -10 }}
               className="relative group overflow-hidden rounded-2xl shadow-md aspect-[4/5]"
             >
-              <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+              <img src={item.img} alt={item.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
                 <div>
                   <h3 className="text-white text-xl md:text-2xl font-oldCursive mb-2">{item.title}</h3>

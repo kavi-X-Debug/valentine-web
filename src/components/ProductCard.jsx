@@ -24,6 +24,7 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite }) {
         <img 
           src={product.image} 
           alt={product.name} 
+          loading="lazy"
           className="w-full h-full object-cover object-top transition-transform duration-500 hover:scale-110" 
         />
         <button

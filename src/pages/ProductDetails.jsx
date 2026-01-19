@@ -127,7 +127,7 @@ export default function ProductDetails() {
           animate={{ opacity: 1, x: 0 }}
           className="rounded-2xl overflow-hidden shadow-lg border border-love-pink/20"
         >
-          <img src={product.image} alt={product.name} className="w-full h-full object-cover object-top" />
+          <img src={product.image} alt={product.name} loading="lazy" className="w-full h-full object-cover object-top" />
         </motion.div>
 
         {/* Product Info */}

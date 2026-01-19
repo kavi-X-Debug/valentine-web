@@ -26,7 +26,7 @@ export default function Cart() {
         <div className="lg:col-span-2 space-y-6">
           {cartItems.map((item) => (
             <div key={`${item.id}-${item.customText}`} className="flex flex-col sm:flex-row items-start sm:items-center bg-white p-4 rounded-xl shadow-sm border border-love-pink/20 gap-4 sm:gap-6">
-              <img src={item.image} alt={item.name} className="w-24 h-24 object-cover rounded-lg flex-shrink-0" />
+              <img src={item.image} alt={item.name} loading="lazy" className="w-24 h-24 object-cover rounded-lg flex-shrink-0" />
               <div className="sm:ml-2 flex-1">
                 <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
                 <p className="text-love-red font-medium">${item.price.toFixed(2)}</p>

@@ -271,7 +271,7 @@ export default function Checkout() {
               <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
                 {cartItems.map((item) => (
                   <div key={`${item.id}-${item.customText}`} className="flex gap-4 border-b border-gray-200 pb-4">
-                    <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-md" />
+                    <img src={item.image} alt={item.name} loading="lazy" className="w-16 h-16 object-cover rounded-md" />
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-800">{item.name}</h4>
                       <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
