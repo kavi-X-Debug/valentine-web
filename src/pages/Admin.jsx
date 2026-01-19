@@ -13,6 +13,7 @@ export default function Admin() {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
+  const [tab, setTab] = useState('overview');
 
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -23,7 +24,8 @@ export default function Admin() {
         setOrders(list);
         setLoading(false);
       },
-      () => {
+      (error) => {
+        console.error('Failed to load orders', error);
         setOrders([]);
         setLoading(false);
       }
@@ -42,7 +44,25 @@ export default function Admin() {
         const id = o.id?.toLowerCase() || '';
         const email = o.userEmail?.toLowerCase() || '';
         const name = `${o.shippingDetails?.firstName || ''} ${o.shippingDetails?.lastName || ''}`.toLowerCase();
-        return id.includes(term) || email.includes(term) || name.includes(term);
+        const userId = o.userId?.toLowerCase() || '';
+        const status = (o.status || 'pending').toLowerCase();
+        const totalStr = String(Number(o.total || 0).toFixed(2));
+        let itemsText = '';
+        if (Array.isArray(o.items)) {
+          itemsText = o.items
+            .map(it => `${it.name || ''} ${it.customText || ''}`)
+            .join(' ')
+            .toLowerCase();
+        }
+        return (
+          id.includes(term) ||
+          email.includes(term) ||
+          name.includes(term) ||
+          userId.includes(term) ||
+          status.includes(term) ||
+          totalStr.includes(term) ||
+          itemsText.includes(term)
+        );
       });
     }
     return list;
@@ -125,107 +145,141 @@ export default function Admin() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-cursive text-love-dark">Admin Orders</h1>
+          <h1 className="text-3xl sm:text-4xl font-cursive text-love-dark">Admin Dashboard</h1>
           <p className="text-gray-600 text-sm sm:text-base mt-2">
-            Monitor user orders, update statuses, and view order details.
+            Overview and management of customer orders.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by email, name, or ID"
-              className="pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none w-full sm:w-64"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <select
-            className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+        <div className="inline-flex items-center rounded-full bg-white/60 border border-love-pink/30 p-1 text-xs sm:text-sm">
+          <button
+            type="button"
+            className={`px-4 py-1.5 rounded-full transition-all ${
+              tab === 'overview'
+                ? 'bg-love-red text-white shadow-sm'
+                : 'text-gray-600 hover:text-love-red'
+            }`}
+            onClick={() => setTab('overview')}
           >
-            <option value="all">All statuses</option>
-            {STATUS_OPTIONS.map(s => (
-              <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>
-            ))}
-          </select>
+            Overview
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-1.5 rounded-full transition-all ${
+              tab === 'orders'
+                ? 'bg-love-red text-white shadow-sm'
+                : 'text-gray-600 hover:text-love-red'
+            }`}
+            onClick={() => setTab('orders')}
+          >
+            Orders
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white border border-love-pink/30 rounded-xl p-4 shadow-sm">
-          <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Total revenue</div>
-          <div className="text-2xl font-semibold text-love-dark">${analytics.totalRevenue.toFixed(2)}</div>
-        </div>
-        <div className="bg-white border border-love-pink/30 rounded-xl p-4 shadow-sm">
-          <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Total orders</div>
-          <div className="text-2xl font-semibold text-love-dark">{analytics.totalOrders}</div>
-        </div>
-        <div className="bg-white border border-love-pink/30 rounded-xl p-4 shadow-sm">
-          <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Orders last 7 days</div>
-          <div className="text-2xl font-semibold text-love-dark">{analytics.recentOrders}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-sm border border-love-pink/20">
-          <div className="px-6 py-4 border-b border-gray-100 text-sm font-medium text-gray-800">
-            Orders last 7 days
+      {tab === 'overview' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-white border border-love-pink/30 rounded-xl p-4 shadow-sm">
+              <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Total revenue</div>
+              <div className="text-2xl font-semibold text-love-dark">${analytics.totalRevenue.toFixed(2)}</div>
+            </div>
+            <div className="bg-white border border-love-pink/30 rounded-xl p-4 shadow-sm">
+              <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Total orders</div>
+              <div className="text-2xl font-semibold text-love-dark">{analytics.totalOrders}</div>
+            </div>
+            <div className="bg-white border border-love-pink/30 rounded-xl p-4 shadow-sm">
+              <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Orders last 7 days</div>
+              <div className="text-2xl font-semibold text-love-dark">{analytics.recentOrders}</div>
+            </div>
           </div>
-          <div className="h-64 px-4 py-4">
-            {analytics.dailyData.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-sm text-gray-500">
-                Not enough data to show trend yet.
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+            <div className="bg-white rounded-xl shadow-sm border border-love-pink/20">
+              <div className="px-6 py-4 border-b border-gray-100 text-sm font-medium text-gray-800">
+                Orders last 7 days
               </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={analytics.dailyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#fee2e2" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="orders"
-                    stroke="#e11d48"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-love-pink/20">
-          <div className="px-6 py-4 border-b border-gray-100 text-sm font-medium text-gray-800">
-            Orders by status
-          </div>
-          <div className="h-64 px-4 py-4">
-            {analytics.statusData.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-sm text-gray-500">
-                No orders yet.
+              <div className="h-64 px-4 py-4">
+                {analytics.dailyData.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-sm text-gray-500">
+                    Not enough data to show trend yet.
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={analytics.dailyData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#fee2e2" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="orders"
+                        stroke="#e11d48"
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
               </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.statusData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#fee2e2" />
-                  <XAxis dataKey="status" tick={{ fontSize: 11 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#fb7185" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-love-pink/20">
+              <div className="px-6 py-4 border-b border-gray-100 text-sm font-medium text-gray-800">
+                Orders by status
+              </div>
+              <div className="h-64 px-4 py-4">
+                {analytics.statusData.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-sm text-gray-500">
+                    No orders yet.
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={analytics.statusData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#fee2e2" />
+                      <XAxis dataKey="status" tick={{ fontSize: 11 }} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="#fb7185" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-love-pink/20 overflow-hidden">
+      {tab === 'orders' && (
+        <>
+          <div className="bg-white border border-love-pink/30 rounded-xl p-4 mb-4 shadow-sm flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by email, name, order ID, product..."
+                className="pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none w-full"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs text-gray-500 hidden sm:inline">Status</span>
+              <select
+                className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none w-full sm:w-44"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">All statuses</option>
+                {STATUS_OPTIONS.map(s => (
+                  <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-love-pink/20 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between text-xs sm:text-sm text-gray-600">
           <div>
             Total orders: <span className="font-semibold">{orders.length}</span>
