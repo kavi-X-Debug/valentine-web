@@ -289,7 +289,7 @@ export default function Products() {
                 </div>
               </div>
             </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-stretch">
             {pageItems.map(product => {
               const fav = favorites.includes(product.id);
               return (

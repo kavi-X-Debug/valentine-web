@@ -18,7 +18,7 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite }) {
       viewport={{ once: true, amount: 0.2 }}
       whileHover={{ y: -8, scale: 1.02 }}
       transition={{ duration: 0.3 }}
-      className="bg-white rounded-2xl shadow-sm hover:shadow-lg overflow-hidden border border-love-pink/30 transition-all"
+      className="bg-white rounded-2xl shadow-sm hover:shadow-lg overflow-hidden border border-love-pink/30 transition-all h-full flex flex-col"
     >
       <div className="relative aspect-square overflow-hidden">
         <img 
