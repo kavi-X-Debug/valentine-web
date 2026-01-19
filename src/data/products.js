@@ -167,7 +167,7 @@ const basePrices = {
   'Wine & Chocolate': 40
 };
 
-const categoryImages = {
+export const CATEGORY_IMAGES = {
   Jewelry: jewelryImg,
   Handmade: handmadeImg,
   Gifts: giftsImg,
@@ -298,7 +298,7 @@ export const MOCK_PRODUCTS = categories.flatMap((cat, ci) =>
     name: names[cat][i],
     price: Number((basePrices[cat] + (i % 10) * 2 + ci * 3).toFixed(2)),
     category: cat,
-    image: categoryImages[cat] || `https://placehold.co/800x800/ffffff/cc1d4f/png?text=${encodeURIComponent(names[cat][i])}`,
+    image: CATEGORY_IMAGES[cat] || `https://placehold.co/800x800/ffffff/cc1d4f/png?text=${encodeURIComponent(names[cat][i])}`,
     description: makeDescription(cat, names[cat][i], i),
     tags: toTags(cat, names[cat][i]).split(',')
   }))

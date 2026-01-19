@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { MOCK_PRODUCTS } from '../data/products';
+import { MOCK_PRODUCTS, CATEGORY_IMAGES } from '../data/products';
 
 export default function Categories() {
   const categories = useMemo(() => {
@@ -21,10 +21,17 @@ export default function Categories() {
           <Link
             key={cat}
             to={`/products?category=${encodeURIComponent(cat)}`}
-            className="group bg-white border border-love-pink/20 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center"
+            className="group bg-white border border-love-pink/20 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all flex flex-col text-center"
           >
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-love-light flex items-center justify-center mb-2 group-hover:bg-love-red/10">
-              <span className="text-lg sm:text-xl text-love-red">♥</span>
+            <div className="w-full h-24 sm:h-28 rounded-lg overflow-hidden mb-3 bg-love-light">
+              {CATEGORY_IMAGES[cat] && (
+                <img
+                  src={CATEGORY_IMAGES[cat]}
+                  alt={cat}
+                  loading="lazy"
+                  className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                />
+              )}
             </div>
             <div className="text-sm sm:text-base font-medium text-love-dark group-hover:text-love-red">
               {cat}
@@ -35,4 +42,3 @@ export default function Categories() {
     </div>
   );
 }
-
