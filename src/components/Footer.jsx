@@ -1,9 +1,7 @@
 import React from 'react';
 import { Heart, Instagram, Facebook, Twitter } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const monetagUrl = import.meta.env.VITE_MONETAG_SMARTLINK_URL || '';
-
+ 
 export default function Footer() {
   return (
     <footer className="bg-white border-t border-love-pink/30 pt-12 pb-8 font-oldSans">
@@ -70,18 +68,6 @@ export default function Footer() {
                 <Twitter className="h-5 w-5" />
               </a>
             </div>
-            {monetagUrl && (
-              <div className="mb-3">
-                <a
-                  href={monetagUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center text-sm font-medium text-love-red hover:text-red-700"
-                >
-                  Special offers &amp; deals
-                </a>
-              </div>
-            )}
             <p className="text-xs text-gray-500">
               &copy; {new Date().getFullYear()} LoveCraft. All rights reserved.
             </p>
