@@ -23,10 +23,16 @@ const Wish = lazy(() => import('./pages/Wish'));
 const Returns = lazy(() => import('./pages/Returns'));
 const Categories = lazy(() => import('./pages/Categories'));
 
-// Simple wrapper for protected routes
 function PrivateRoute({ children }) {
   const { currentUser } = useAuth();
   return currentUser ? children : <Navigate to="/login" />;
+}
+
+function AdminRoute({ children }) {
+  const { currentUser, isAdmin } = useAuth();
+  if (!currentUser) return <Navigate to="/login" />;
+  if (!isAdmin) return <Navigate to="/" />;
+  return children;
 }
 
 function App() {
@@ -56,9 +62,9 @@ function App() {
                 <Route 
                   path="/admin" 
                   element={
-                    <PrivateRoute>
+                    <AdminRoute>
                       <Admin />
-                    </PrivateRoute>
+                    </AdminRoute>
                   } 
                 />
                 <Route 
