@@ -152,8 +152,8 @@ export default function Products() {
         
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <section className="order-1 md:order-2 md:col-span-3">
+      <div className="space-y-6">
+        <section>
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={toggleFilters}
