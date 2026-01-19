@@ -14,6 +14,9 @@ export default function Admin() {
   const [expandedId, setExpandedId] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
   const [tab, setTab] = useState('overview');
+  const [sort, setSort] = useState('created_desc');
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -67,6 +70,46 @@ export default function Admin() {
     }
     return list;
   }, [orders, statusFilter, search]);
+
+  const sortedOrders = useMemo(() => {
+    const list = [...filteredOrders];
+    if (sort === 'created_asc' || sort === 'created_desc') {
+      list.sort((a, b) => {
+        const ra = a.createdAt;
+        const rb = b.createdAt;
+        let da = 0;
+        let db = 0;
+        if (ra && typeof ra.toDate === 'function') {
+          da = ra.toDate().getTime();
+        } else if (ra && typeof ra.seconds === 'number') {
+          da = ra.seconds * 1000;
+        }
+        if (rb && typeof rb.toDate === 'function') {
+          db = rb.toDate().getTime();
+        } else if (rb && typeof rb.seconds === 'number') {
+          db = rb.seconds * 1000;
+        }
+        return sort === 'created_desc' ? db - da : da - db;
+      });
+    } else if (sort === 'total_asc' || sort === 'total_desc') {
+      list.sort((a, b) => {
+        const ta = Number(a.total || 0);
+        const tb = Number(b.total || 0);
+        return sort === 'total_desc' ? tb - ta : ta - tb;
+      });
+    }
+    return list;
+  }, [filteredOrders, sort]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
+  const totalOrdersFiltered = sortedOrders.length;
+  const totalPages = Math.max(1, Math.ceil(totalOrdersFiltered / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const firstIndex = (currentPage - 1) * pageSize;
+  const pageItems = sortedOrders.slice(firstIndex, firstIndex + pageSize);
 
   const analytics = useMemo(() => {
     if (!orders.length) {
@@ -264,18 +307,33 @@ export default function Admin() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-xs text-gray-500 hidden sm:inline">Status</span>
-              <select
-                className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none w-full sm:w-44"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="all">All statuses</option>
-                {STATUS_OPTIONS.map(s => (
-                  <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>
-                ))}
-              </select>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="text-xs text-gray-500 hidden sm:inline">Status</span>
+                <select
+                  className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none w-full sm:w-44"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="all">All statuses</option>
+                  {STATUS_OPTIONS.map(s => (
+                    <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-52">
+                <span className="text-xs text-gray-500 hidden sm:inline">Sort</span>
+                <select
+                  className="px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none w-full"
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                >
+                  <option value="created_desc">Newest first</option>
+                  <option value="created_asc">Oldest first</option>
+                  <option value="total_desc">Total high → low</option>
+                  <option value="total_asc">Total low → high</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -285,7 +343,7 @@ export default function Admin() {
                 Total orders: <span className="font-semibold">{orders.length}</span>
                 {statusFilter !== 'all' && (
                   <span className="ml-2">
-                    • Showing <span className="font-semibold">{filteredOrders.length}</span> {statusFilter}
+                    • Showing <span className="font-semibold">{totalOrdersFiltered}</span> {statusFilter}
                   </span>
                 )}
               </div>
@@ -297,13 +355,13 @@ export default function Admin() {
               )}
             </div>
 
-            {filteredOrders.length === 0 && !loading && (
+            {totalOrdersFiltered === 0 && !loading && (
               <div className="px-6 py-10 text-center text-sm text-gray-500">
                 No orders found for the current filters.
               </div>
             )}
 
-            {filteredOrders.length > 0 && (
+            {totalOrdersFiltered > 0 && (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="bg-love-light/70">
@@ -317,7 +375,7 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {filteredOrders.map(order => {
+                    {pageItems.map(order => {
                       const created = formatDate(order.createdAt);
                       const fullName = `${order.shippingDetails?.firstName || ''} ${order.shippingDetails?.lastName || ''}`.trim() || 'Guest';
                       const status = order.status || 'pending';
