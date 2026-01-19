@@ -7,6 +7,8 @@ const revealButton = document.getElementById("revealButton");
 const backButton = document.getElementById("backButton");
 const teaserScreen = document.querySelector(".screen-teaser");
 const messageScreen = document.querySelector(".screen-message");
+const teaserCard = document.querySelector(".card-teaser");
+const messageCard = document.querySelector(".card-message");
 const receiverNameEl = document.getElementById("receiverName");
 const messageTextEl = document.getElementById("messageText");
 const senderNameEl = document.getElementById("senderName");
@@ -15,6 +17,13 @@ receiverNameEl.textContent = receiverNameText;
 messageTextEl.textContent = messageBodyText;
 senderNameEl.textContent = senderNameText;
 
+function animateCard(card) {
+  if (!card) return;
+  card.classList.remove("card-animate");
+  void card.offsetWidth;
+  card.classList.add("card-animate");
+}
+
 function showMessageScreen() {
   teaserScreen.classList.remove("screen-active");
   teaserScreen.setAttribute("aria-hidden", "true");
@@ -22,6 +31,7 @@ function showMessageScreen() {
   messageScreen.classList.add("screen-active");
   messageScreen.setAttribute("aria-hidden", "false");
 
+  animateCard(messageCard);
   triggerHeartBurst();
 }
 
@@ -31,6 +41,8 @@ function showTeaserScreen() {
 
   teaserScreen.classList.add("screen-active");
   teaserScreen.setAttribute("aria-hidden", "false");
+
+  animateCard(teaserCard);
 }
 
 revealButton.addEventListener("click", showMessageScreen);
@@ -63,4 +75,3 @@ function triggerHeartBurst() {
     );
   }
 }
-
