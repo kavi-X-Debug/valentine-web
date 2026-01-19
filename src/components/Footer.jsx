@@ -41,28 +41,28 @@ export default function Footer() {
             <h3 className="font-semibold text-love-dark mb-4">Stay in Love</h3>
             <div className="flex space-x-4 mb-4">
               <a
-                href="https://www.instagram.com/accounts/emailsignup/"
+                href="https://www.instagram.com/accounts/login/"
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Sign up for Instagram"
+                aria-label="Log in to Instagram"
                 className="text-gray-400 hover:text-love-red transition-colors"
               >
                 <Instagram className="h-5 w-5" />
               </a>
               <a
-                href="https://www.facebook.com/r.php"
+                href="https://www.facebook.com/login/"
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Sign up for Facebook"
+                aria-label="Log in to Facebook"
                 className="text-gray-400 hover:text-love-red transition-colors"
               >
                 <Facebook className="h-5 w-5" />
               </a>
               <a
-                href="https://twitter.com/i/flow/signup"
+                href="https://twitter.com/login"
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Sign up for Twitter"
+                aria-label="Log in to Twitter"
                 className="text-gray-400 hover:text-love-red transition-colors"
               >
                 <Twitter className="h-5 w-5" />
