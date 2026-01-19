@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingCart, Heart, Star, Check, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MOCK_PRODUCTS } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { db } from '../firebase/config';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -16,6 +18,7 @@ export default function ProductDetails() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [reviews, setReviews] = useState([]);
 
   const handleAddToCart = () => {
     if (!currentUser) {
@@ -25,6 +28,25 @@ export default function ProductDetails() {
     setShowConfirm(true);
   };
   
+  useEffect(() => {
+    if (!product) return;
+    const q = query(
+      collection(db, 'reviews'),
+      where('productId', '==', product.id),
+      orderBy('createdAt', 'desc')
+    );
+    const unsub = onSnapshot(
+      q,
+      snapshot => {
+        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setReviews(list);
+      },
+      () => {
+        setReviews([]);
+      }
+    );
+    return () => unsub();
+  }, [product]);
   function downloadWishImage() {
     const size = 1080;
     const canvas = document.createElement('canvas');
@@ -139,14 +161,18 @@ export default function ProductDetails() {
           <div>
             <div className="text-sm text-love-red font-medium uppercase tracking-wider mb-2">{product.category}</div>
             <h1 className="text-4xl font-cursive text-love-dark mb-2">{product.name}</h1>
-            <div className="flex items-center space-x-2 text-yellow-500 text-sm mb-4">
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-current" />
-                ))}
+            {reviews.length > 0 && (
+              <div className="flex items-center space-x-2 text-yellow-500 text-sm mb-4">
+                <div className="flex">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-current" />
+                  ))}
+                </div>
+                <span className="text-gray-400">
+                  ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
+                </span>
               </div>
-              <span className="text-gray-400">(24 reviews)</span>
-            </div>
+            )}
             <p className="text-3xl font-bold text-gray-900">${product.price.toFixed(2)}</p>
           </div>
 
@@ -243,6 +269,38 @@ export default function ProductDetails() {
                 Confirm
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {reviews.length > 0 && (
+        <div className="mt-10 max-w-3xl mx-auto">
+          <h2 className="text-2xl font-semibold text-love-dark mb-4">What people say</h2>
+          <div className="space-y-4">
+            {reviews.map(review => {
+              const createdAt = review.createdAt && review.createdAt.toDate
+                ? review.createdAt.toDate().toLocaleDateString()
+                : '';
+              return (
+                <div
+                  key={review.id}
+                  className="bg-white border border-love-pink/20 rounded-xl p-4 shadow-sm"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm font-semibold text-gray-800">
+                      {review.userName || 'Someone'}
+                    </div>
+                    {createdAt && (
+                      <div className="text-xs text-gray-400">
+                        {createdAt}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700">
+                    {review.message}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
-import { doc, getDoc, setDoc, updateDoc, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayRemove, collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { motion } from 'framer-motion';
 import { MOCK_PRODUCTS } from '../data/products';
@@ -29,6 +29,13 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const fileInputRef = useRef(null);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [reviewOrderId, setReviewOrderId] = useState(null);
+  const [reviewProductId, setReviewProductId] = useState(null);
+  const [reviewProductName, setReviewProductName] = useState('');
+  const [reviewText, setReviewText] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -61,6 +68,33 @@ export default function Profile() {
       }
     }
     load();
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setOrders([]);
+      setOrdersLoading(false);
+      return;
+    }
+    setOrdersLoading(true);
+    const q = query(
+      collection(db, 'orders'),
+      where('userId', '==', currentUser.uid),
+      orderBy('createdAt', 'desc')
+    );
+    const unsub = onSnapshot(
+      q,
+      snapshot => {
+        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setOrders(list);
+        setOrdersLoading(false);
+      },
+      () => {
+        setOrders([]);
+        setOrdersLoading(false);
+      }
+    );
+    return () => unsub();
   }, [currentUser]);
 
   function handleChange(e) {
@@ -183,6 +217,38 @@ export default function Profile() {
       setFavorites(prev => prev.filter(x => x !== id));
     } catch (e) {
       console.error('Failed to remove favorite', e);
+    }
+  }
+
+  async function submitReview(order, item) {
+    if (!currentUser || !order || !item) return;
+    const trimmed = reviewText.trim();
+    if (!trimmed) return;
+    setReviewSubmitting(true);
+    try {
+      const reviewsRef = collection(db, 'reviews');
+      const displayName = form.name || currentUser.displayName || '';
+      const nameFallback = displayName || currentUser.email || 'Anonymous';
+      await setDoc(
+        doc(reviewsRef),
+        {
+          productId: item.id,
+          productName: item.name || '',
+          userId: currentUser.uid,
+          userName: nameFallback,
+          message: trimmed,
+          createdAt: new Date(),
+          orderId: order.id || null
+        }
+      );
+      setReviewText('');
+      setReviewOrderId(null);
+      setReviewProductId(null);
+      setReviewProductName('');
+    } catch (e) {
+      console.error('Failed to submit review', e);
+    } finally {
+      setReviewSubmitting(false);
     }
   }
 
@@ -485,6 +551,210 @@ export default function Profile() {
                 </motion.div>
               ))}
             </div>
+          )}
+        </motion.div>
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <motion.div
+          layout
+          className="bg-white p-8 rounded-2xl shadow-lg border border-love-pink/20 mt-8"
+        >
+          <h2 className="text-2xl font-semibold text-love-dark mb-4">Your Orders</h2>
+          {ordersLoading ? (
+            <div className="text-gray-600 text-sm">Loading your orders...</div>
+          ) : orders.length === 0 ? (
+            <div className="text-gray-600 text-sm">You have not placed any orders yet.</div>
+          ) : (
+            <>
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">In progress</h3>
+                <div className="space-y-3">
+                  {orders.filter(o => (o.status || 'pending') !== 'delivered').length === 0 && (
+                    <div className="text-xs text-gray-500">No active orders.</div>
+                  )}
+                  {orders
+                    .filter(o => (o.status || 'pending') !== 'delivered')
+                    .map(order => {
+                      const status = (order.status || 'pending').toLowerCase();
+                      const createdAt = order.createdAt && order.createdAt.toDate
+                        ? order.createdAt.toDate().toLocaleString()
+                        : '—';
+                      const total = Number(order.total || 0).toFixed(2);
+                      return (
+                        <div
+                          key={order.id}
+                          className="flex items-center justify-between border border-gray-100 rounded-xl px-4 py-3 bg-gray-50"
+                        >
+                          <div>
+                            <div className="text-xs font-mono text-gray-500 truncate max-w-[180px]">
+                              {order.id}
+                            </div>
+                            <div className="text-sm text-gray-700">
+                              {createdAt}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs">
+                            <div className="font-semibold text-love-dark">
+                              ${total}
+                            </div>
+                            <div
+                              className={
+                                'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ' +
+                                (status === 'pending'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : status === 'processing'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : status === 'shipped'
+                                  ? 'bg-indigo-100 text-indigo-800'
+                                  : status === 'cancelled'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-green-100 text-green-800')
+                              }
+                            >
+                              {status[0].toUpperCase() + status.slice(1)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Completed orders</h3>
+                <div className="space-y-4">
+                  {orders.filter(o => (o.status || 'pending') === 'delivered').length === 0 && (
+                    <div className="text-xs text-gray-500">No completed orders yet.</div>
+                  )}
+                  {orders
+                    .filter(o => (o.status || 'pending') === 'delivered')
+                    .map(order => {
+                      const createdAt = order.createdAt && order.createdAt.toDate
+                        ? order.createdAt.toDate().toLocaleString()
+                        : '—';
+                      const total = Number(order.total || 0).toFixed(2);
+                      const items = Array.isArray(order.items) ? order.items : [];
+                      return (
+                        <div
+                          key={order.id}
+                          className="border border-gray-100 rounded-2xl p-4 bg-gray-50"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <div className="text-xs font-mono text-gray-500 truncate max-w-[220px]">
+                                {order.id}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Placed on {createdAt}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-semibold text-love-dark">
+                                ${total}
+                              </div>
+                              <div className="text-[11px] text-green-700 bg-green-100 inline-flex px-2 py-0.5 rounded-full mt-1">
+                                Delivered
+                              </div>
+                            </div>
+                          </div>
+                          {items.length > 0 && (
+                            <div className="space-y-3">
+                              {items.map((item, index) => (
+                                <div
+                                  key={`${order.id}-${index}`}
+                                  className="flex items-center gap-3"
+                                >
+                                  <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 bg-white">
+                                    {item.image ? (
+                                      <img
+                                        src={item.image}
+                                        alt={item.name || 'Item'}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">
+                                        No image
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-gray-800 truncate">
+                                      {item.name || 'Item'}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      Qty {item.quantity || 1} • ${Number(item.price || 0).toFixed(2)}
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-col items-end gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setReviewOrderId(order.id);
+                                        setReviewProductId(item.id);
+                                        setReviewProductName(item.name || '');
+                                        setReviewText('');
+                                      }}
+                                      className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-700 hover:border-love-red hover:text-love-red transition-colors"
+                                    >
+                                      {reviewOrderId === order.id && reviewProductId === item.id
+                                        ? 'Writing...'
+                                        : 'Write review'}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {reviewOrderId === order.id && reviewProductId && (
+                            <div className="mt-4 border-t border-gray-200 pt-3">
+                              <div className="text-xs font-semibold text-gray-700 mb-1">
+                                Review for {reviewProductName || 'item'}
+                              </div>
+                              <textarea
+                                rows={3}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                placeholder="Write a short message about this item..."
+                                value={reviewText}
+                                onChange={(e) => setReviewText(e.target.value)}
+                              />
+                              <div className="mt-2 flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setReviewOrderId(null);
+                                    setReviewProductId(null);
+                                    setReviewProductName('');
+                                    setReviewText('');
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs text-gray-600 hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={reviewSubmitting || !reviewText.trim()}
+                                  onClick={() => {
+                                    const targetItem = (Array.isArray(order.items) ? order.items : []).find(
+                                      it => it && it.id === reviewProductId
+                                    );
+                                    submitReview(order, targetItem);
+                                  }}
+                                  className="px-4 py-1.5 rounded-lg bg-love-red text-white text-xs font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                  {reviewSubmitting ? 'Saving...' : 'Submit review'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </>
           )}
         </motion.div>
       </motion.div>
