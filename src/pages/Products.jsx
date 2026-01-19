@@ -7,6 +7,15 @@ import { db } from '../firebase/config';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useSearchParams } from 'react-router-dom';
 
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 export default function Products() {
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
@@ -22,13 +31,15 @@ export default function Products() {
   const [pricePreset, setPricePreset] = useState('none');
   const [searchParams] = useSearchParams();
 
+  const randomizedProducts = useMemo(() => shuffleArray(MOCK_PRODUCTS), []);
+
   const categories = useMemo(() => {
     const set = new Set(MOCK_PRODUCTS.map(p => p.category));
     return ['All', ...Array.from(set)];
   }, []);
 
   const displayedProducts = useMemo(() => {
-    let arr = filter === 'All' ? MOCK_PRODUCTS : MOCK_PRODUCTS.filter(p => p.category === filter);
+    let arr = filter === 'All' ? randomizedProducts : randomizedProducts.filter(p => p.category === filter);
     const q = search.trim().toLowerCase();
     if (q) {
       arr = arr.filter(p => p.name.toLowerCase().includes(q));
@@ -62,7 +73,7 @@ export default function Products() {
       arr = [...arr].sort((a, b) => b.name.localeCompare(a.name));
     }
     return arr;
-  }, [filter, search, minPrice, maxPrice, sort, selectedTags, onlyFavorites, pricePreset, favorites, currentUser]);
+  }, [filter, search, minPrice, maxPrice, sort, selectedTags, onlyFavorites, pricePreset, favorites, currentUser, randomizedProducts]);
   const pageSize = 16;
   const totalPages = Math.max(1, Math.ceil(displayedProducts.length / pageSize));
   const currentPage = Math.min(page, totalPages);

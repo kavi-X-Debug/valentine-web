@@ -1,3 +1,31 @@
+import jewelryImg from '../../Images/Gemini_Generated_Image_1rw2m01rw2m01rw2.png';
+import handmadeImg from '../../Images/Gemini_Generated_Image_20ve7e20ve7e20ve.png';
+import giftsImg from '../../Images/Gemini_Generated_Image_6vh0ym6vh0ym6vh0.png';
+import apparelImg from '../../Images/Gemini_Generated_Image_7c1r8c7c1r8c7c1r.png';
+import personalizedImg from '../../Images/Gemini_Generated_Image_9c1k0m9c1k0m9c1k.png';
+import foodImg from '../../Images/Gemini_Generated_Image_9v9d889v9d889v9d.png';
+import homeImg from '../../Images/Gemini_Generated_Image_b1j2ezb1j2ezb1j2.png';
+import romanceImg from '../../Images/Gemini_Generated_Image_c81wb6c81wb6c81w.png';
+import techImg from '../../Images/Gemini_Generated_Image_dorjlkdorjlkdorj.png';
+import booksImg from '../../Images/Gemini_Generated_Image_fv5uqqfv5uqqfv5u.png';
+import experiencesImg from '../../Images/Gemini_Generated_Image_fxewi0fxewi0fxew.png';
+import accessoriesImg from '../../Images/Gemini_Generated_Image_h37im2h37im2h37i.png';
+import beautyImg from '../../Images/Gemini_Generated_Image_h79dhvh79dhvh79d.png';
+import stationeryImg from '../../Images/Gemini_Generated_Image_izw509izw509izw5.png';
+import gamesImg from '../../Images/Gemini_Generated_Image_jbjgtgjbjgtgjbjg.png';
+import plantsImg from '../../Images/Gemini_Generated_Image_ktsm43ktsm43ktsm.png';
+import artImg from '../../Images/Gemini_Generated_Image_m9exybm9exybm9ex.png';
+import luxuryImg from '../../Images/Gemini_Generated_Image_pp469bpp469bpp46.png';
+import diyImg from '../../Images/Gemini_Generated_Image_q192qpq192qpq192.png';
+import coupleImg from '../../Images/Gemini_Generated_Image_svesh1svesh1sves.png';
+import keepsakeImg from '../../Images/Gemini_Generated_Image_szps2szps2szps2s.png';
+import spaImg from '../../Images/Gemini_Generated_Image_vb1hfdvb1hfdvb1h.png';
+import petImg from '../../Images/Gemini_Generated_Image_vcz15kvcz15kvcz1.png';
+import ecoImg from '../../Images/Gemini_Generated_Image_wcjntpwcjntpwcjn.png';
+import subscriptionImg from '../../Images/Gemini_Generated_Image_wsz0v2wsz0v2wsz0.png';
+import customArtImg from '../../Images/Gemini_Generated_Image_xd1jztxd1jztxd1j.png';
+import wineChocolateImg from '../../Images/Gemini_Generated_Image_xkoxlqxkoxlqxkox.png';
+
 const categories = [
   'Jewelry', 'Handmade', 'Gifts', 'Apparel', 'Personalized', 'Food', 'Home',
   'Romance', 'Tech', 'Books', 'Experiences', 'Accessories',
@@ -138,6 +166,36 @@ const basePrices = {
   'Custom Art': 50,
   'Wine & Chocolate': 40
 };
+
+const categoryImages = {
+  Jewelry: jewelryImg,
+  Handmade: handmadeImg,
+  Gifts: giftsImg,
+  Apparel: apparelImg,
+  Personalized: personalizedImg,
+  Food: foodImg,
+  Home: homeImg,
+  Romance: romanceImg,
+  Tech: techImg,
+  Books: booksImg,
+  Experiences: experiencesImg,
+  Accessories: accessoriesImg,
+  Beauty: beautyImg,
+  Stationery: stationeryImg,
+  Games: gamesImg,
+  Plants: plantsImg,
+  Art: artImg,
+  'Luxury Gifts': luxuryImg,
+  'DIY Kits': diyImg,
+  'Couple Sets': coupleImg,
+  'Memory Keepsakes': keepsakeImg,
+  'Spa & Relaxation': spaImg,
+  'Pet Valentine': petImg,
+  'Eco-Friendly': ecoImg,
+  'Subscription Boxes': subscriptionImg,
+  'Custom Art': customArtImg,
+  'Wine & Chocolate': wineChocolateImg
+};
 const toTags = (cat, name) => {
   const n = name.toLowerCase();
   const tags = [cat.toLowerCase(), 'valentine'];
@@ -240,7 +298,7 @@ export const MOCK_PRODUCTS = categories.flatMap((cat, ci) =>
     name: names[cat][i],
     price: Number((basePrices[cat] + (i % 10) * 2 + ci * 3).toFixed(2)),
     category: cat,
-    image: `https://placehold.co/800x800/ffffff/cc1d4f/png?text=${encodeURIComponent(names[cat][i])}`,
+    image: categoryImages[cat] || `https://placehold.co/800x800/ffffff/cc1d4f/png?text=${encodeURIComponent(names[cat][i])}`,
     description: makeDescription(cat, names[cat][i], i),
     tags: toTags(cat, names[cat][i]).split(',')
   }))
