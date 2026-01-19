@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { db } from '../firebase/config';
 import { collection, onSnapshot, orderBy, query, updateDoc, doc } from 'firebase/firestore';
 import { Search, Loader2 } from 'lucide-react';
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
 
 const STATUS_OPTIONS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -46,6 +47,60 @@ export default function Admin() {
     }
     return list;
   }, [orders, statusFilter, search]);
+
+  const analytics = useMemo(() => {
+    if (!orders.length) {
+      return {
+        totalRevenue: 0,
+        totalOrders: 0,
+        recentOrders: 0,
+        dailyData: [],
+        statusData: []
+      };
+    }
+    const statusCounts = {};
+    const byDay = {};
+    let totalRevenue = 0;
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+    let recentOrders = 0;
+    orders.forEach(o => {
+      const status = (o.status || 'pending').toLowerCase();
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+      const raw = o.createdAt;
+      let d;
+      if (raw && typeof raw.toDate === 'function') {
+        d = raw.toDate();
+      } else if (raw && typeof raw.seconds === 'number') {
+        d = new Date(raw.seconds * 1000);
+      }
+      if (d && !Number.isNaN(d.getTime())) {
+        const key = d.toISOString().slice(0, 10);
+        if (!byDay[key]) {
+          byDay[key] = { date: key, orders: 0, revenue: 0 };
+        }
+        byDay[key].orders += 1;
+        byDay[key].revenue += Number(o.total || 0);
+        if (d >= sevenDaysAgo) {
+          recentOrders += 1;
+        }
+      }
+      totalRevenue += Number(o.total || 0);
+    });
+    const daily = Object.values(byDay).sort((a, b) => (a.date > b.date ? 1 : -1));
+    const dailyData = daily.slice(-7);
+    const statusData = STATUS_OPTIONS.map(s => ({
+      status: s[0].toUpperCase() + s.slice(1),
+      count: statusCounts[s] || 0
+    })).filter(item => item.count > 0);
+    return {
+      totalRevenue,
+      totalOrders: orders.length,
+      recentOrders,
+      dailyData,
+      statusData
+    };
+  }, [orders]);
 
   async function handleStatusChange(orderId, nextStatus) {
     if (!orderId || !nextStatus) return;
@@ -98,6 +153,75 @@ export default function Admin() {
               <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>
             ))}
           </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white border border-love-pink/30 rounded-xl p-4 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Total revenue</div>
+          <div className="text-2xl font-semibold text-love-dark">${analytics.totalRevenue.toFixed(2)}</div>
+        </div>
+        <div className="bg-white border border-love-pink/30 rounded-xl p-4 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Total orders</div>
+          <div className="text-2xl font-semibold text-love-dark">{analytics.totalOrders}</div>
+        </div>
+        <div className="bg-white border border-love-pink/30 rounded-xl p-4 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Orders last 7 days</div>
+          <div className="text-2xl font-semibold text-love-dark">{analytics.recentOrders}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm border border-love-pink/20">
+          <div className="px-6 py-4 border-b border-gray-100 text-sm font-medium text-gray-800">
+            Orders last 7 days
+          </div>
+          <div className="h-64 px-4 py-4">
+            {analytics.dailyData.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-sm text-gray-500">
+                Not enough data to show trend yet.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={analytics.dailyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#fee2e2" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="orders"
+                    stroke="#e11d48"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-love-pink/20">
+          <div className="px-6 py-4 border-b border-gray-100 text-sm font-medium text-gray-800">
+            Orders by status
+          </div>
+          <div className="h-64 px-4 py-4">
+            {analytics.statusData.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-sm text-gray-500">
+                No orders yet.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analytics.statusData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#fee2e2" />
+                  <XAxis dataKey="status" tick={{ fontSize: 11 }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#fb7185" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </div>
       </div>
 
