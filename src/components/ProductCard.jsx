@@ -13,10 +13,12 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite }) {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ y: -5 }}
-      className="bg-white rounded-xl shadow-sm hover:shadow-md overflow-hidden border border-love-pink/20 transition-all"
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, amount: 0.2 }}
+      whileHover={{ y: -8, scale: 1.02 }}
+      transition={{ duration: 0.3 }}
+      className="bg-white rounded-2xl shadow-sm hover:shadow-lg overflow-hidden border border-love-pink/30 transition-all"
     >
       <div className="relative aspect-square overflow-hidden">
         <img 
@@ -33,12 +35,19 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite }) {
         </button>
       </div>
       
-      <div className="p-4">
+      <div className="p-4 sm:p-5 flex flex-col h-full">
         <div className="text-xs text-love-red font-medium mb-1 uppercase tracking-wider">{product.category}</div>
         <Link to={`/products/${product.id}`}>
-          <h3 className="text-lg font-semibold text-gray-800 mb-2 hover:text-love-red transition-colors truncate">{product.name}</h3>
+          <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 hover:text-love-red transition-colors truncate">
+            {product.name}
+          </h3>
         </Link>
-        <div className="flex flex-col mt-4 space-y-2">
+        {product.description && (
+          <p className="text-xs text-gray-500 mb-3 h-10 overflow-hidden">
+            {product.description}
+          </p>
+        )}
+        <div className="flex flex-col mt-auto space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xl font-bold text-love-dark">${product.price.toFixed(2)}</span>
             <button 
