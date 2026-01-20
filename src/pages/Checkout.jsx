@@ -36,6 +36,11 @@ export default function Checkout() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!currentUser) {
+      setError('Please log in to place an order.');
+      navigate('/login');
+      return;
+    }
     setLoading(true);
     setError('');
 

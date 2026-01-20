@@ -76,10 +76,16 @@ export default function Profile() {
       setOrdersLoading(false);
       return;
     }
+    const userId = currentUser.uid;
+    if (!userId) {
+      setOrders([]);
+      setOrdersLoading(false);
+      return;
+    }
     setOrdersLoading(true);
     const q = query(
       collection(db, 'orders'),
-      where('userId', '==', currentUser.uid),
+      where('userId', '==', userId),
       orderBy('createdAt', 'desc')
     );
     const unsub = onSnapshot(
