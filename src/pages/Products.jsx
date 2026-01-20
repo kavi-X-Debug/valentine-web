@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ProductCard from '../components/ProductCard';
 import { Filter } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { MOCK_PRODUCTS } from '../data/products';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
@@ -181,27 +182,47 @@ export default function Products() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
         <div>
           <h1 className="text-4xl font-cursive text-love-dark">Shop Gifts</h1>
           <p className="text-gray-600 mt-2">Find the perfect token of your affection</p>
         </div>
-        
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="w-full md:max-w-md"
+        >
+          <input
+            type="text"
+            placeholder="Search gifts..."
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none transition-shadow"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+        </motion.div>
+        <motion.button
+          type="button"
+          onClick={toggleFilters}
+          whileHover={{ scale: 1.05, y: -1 }}
+          whileTap={{ scale: 0.96, y: 0 }}
+          className="inline-flex items-center self-start md:self-auto space-x-2 px-4 py-2 rounded-full bg-white border border-love-pink/40 text-gray-600 hover:text-love-red hover:border-love-red shadow-sm hover:shadow-md transition-colors"
+          aria-label="Toggle filters"
+          title="Filters"
+        >
+          <Filter className="h-5 w-5" />
+          <span className="text-sm font-medium">Filters</span>
+        </motion.button>
       </div>
 
       <div className="space-y-6">
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={toggleFilters}
-              className="inline-flex items-center space-x-2 px-3 py-2 rounded-lg bg-white border border-love-pink/30 text-gray-600 hover:text-love-red hover:border-love-red transition-colors"
-              aria-label="Toggle filters"
-              title="Filters"
-            >
-              <Filter className="h-5 w-5" />
-              <span className="text-sm font-medium">Filters</span>
-            </button>
-          </div>
           <div className={`bg-white p-4 rounded-xl shadow-sm border border-love-pink/20 mb-6 ${filterOpen ? 'block' : 'hidden'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <span className="text-sm font-semibold text-love-dark">Filter & Sort</span>
@@ -222,7 +243,7 @@ export default function Products() {
                   Clear all
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <select
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
                   value={filter}
@@ -235,16 +256,6 @@ export default function Products() {
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                />
                 <select
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
                   value={sort}
