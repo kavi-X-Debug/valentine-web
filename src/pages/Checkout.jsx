@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
-import { collection, addDoc, serverTimestamp, doc, setDoc, increment } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, setDoc, increment, getDoc } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import emailjs from '@emailjs/browser';
 
@@ -26,6 +26,46 @@ export default function Checkout() {
     expiryDate: '',
     cvv: ''
   });
+
+  useEffect(() => {
+    async function loadProfileDefaults() {
+      if (!currentUser) return;
+      try {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) {
+          setFormData(prev => ({
+            ...prev,
+            email: currentUser.email || prev.email
+          }));
+          return;
+        }
+        const data = snap.data() || {};
+        let firstName = '';
+        let lastName = '';
+        if (data.name) {
+          const parts = String(data.name).trim().split(' ');
+          firstName = parts[0] || '';
+          lastName = parts.slice(1).join(' ') || '';
+        }
+        setFormData(prev => ({
+          ...prev,
+          firstName: firstName || prev.firstName,
+          lastName: lastName || prev.lastName,
+          email: currentUser.email || prev.email,
+          address: data.address || prev.address,
+          zipCode: data.postalCode || prev.zipCode,
+          country: data.country || prev.country
+        }));
+      } catch (e) {
+        setFormData(prev => ({
+          ...prev,
+          email: currentUser.email || prev.email
+        }));
+      }
+    }
+    loadProfileDefaults();
+  }, [currentUser]);
 
   const handleChange = (e) => {
     setFormData({
