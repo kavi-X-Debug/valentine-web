@@ -36,6 +36,7 @@ export default function Profile() {
   const [reviewProductName, setReviewProductName] = useState('');
   const [reviewText, setReviewText] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -257,6 +258,10 @@ export default function Profile() {
       setReviewOrderId(null);
       setReviewProductId(null);
       setReviewProductName('');
+      setReviewSuccess(true);
+      setTimeout(() => {
+        setReviewSuccess(false);
+      }, 3000);
     } catch (e) {
       console.error('Failed to submit review', e);
     } finally {
@@ -799,6 +804,16 @@ export default function Profile() {
           )}
         </motion.div>
       </motion.div>
+      {reviewSuccess && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-love-dark text-white text-sm shadow-lg"
+        >
+          Your Review is Successfully Submitted
+        </motion.div>
+      )}
     </div>
   );
 }

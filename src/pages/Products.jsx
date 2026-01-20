@@ -4,7 +4,7 @@ import { Filter } from 'lucide-react';
 import { MOCK_PRODUCTS } from '../data/products';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, onSnapshot } from 'firebase/firestore';
 import { useSearchParams } from 'react-router-dom';
 
 function shuffleArray(array) {
@@ -30,6 +30,7 @@ export default function Products() {
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [pricePreset, setPricePreset] = useState('none');
   const [searchParams] = useSearchParams();
+  const [reviewSummary, setReviewSummary] = useState({});
 
   const randomizedProducts = useMemo(() => shuffleArray(MOCK_PRODUCTS), []);
 
@@ -131,6 +132,31 @@ export default function Products() {
     loadFavs();
     return () => { active = false; };
   }, [currentUser]);
+
+  useEffect(() => {
+    const reviewsRef = collection(db, 'reviews');
+    const unsub = onSnapshot(
+      reviewsRef,
+      snapshot => {
+        const summary = {};
+        snapshot.docs.forEach(d => {
+          const data = d.data() || {};
+          const pid = data.productId;
+          if (pid === undefined || pid === null) return;
+          const key = pid;
+          if (!summary[key]) {
+            summary[key] = { count: 0 };
+          }
+          summary[key].count += 1;
+        });
+        setReviewSummary(summary);
+      },
+      () => {
+        setReviewSummary({});
+      }
+    );
+    return () => unsub();
+  }, []);
 
   async function toggleFavorite(id) {
     if (!currentUser) {
@@ -303,12 +329,14 @@ export default function Products() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-stretch">
             {pageItems.map(product => {
               const fav = favorites.includes(product.id);
+              const summary = reviewSummary[product.id] || { count: 0 };
               return (
                 <ProductCard
                   key={product.id}
                   product={product}
                   isFavorite={fav}
                   onToggleFavorite={() => toggleFavorite(product.id)}
+                  reviewSummary={summary}
                 />
               );
             })}

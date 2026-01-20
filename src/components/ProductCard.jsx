@@ -5,15 +5,13 @@ import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
-export default function ProductCard({ product, isFavorite, onToggleFavorite }) {
+export default function ProductCard({ product, isFavorite, onToggleFavorite, reviewSummary }) {
   const { addToCart } = useCart();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
-  const ratingBase = (product.id % 10) / 10;
-  const rating = 4 + ratingBase;
-  const ratingText = rating.toFixed(1);
-  const reviewsCount = 40 + (product.id % 60);
+  const reviewsCount = reviewSummary?.count || 0;
+  const hasReviews = reviewsCount > 0;
 
   return (
     <motion.div 
@@ -47,14 +45,20 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite }) {
             {product.name}
           </h3>
         </Link>
-        <div className="flex items-center text-[11px] text-gray-500 mb-2 space-x-1">
-          <div className="flex items-center text-yellow-400">
-            <Star className="h-3 w-3 fill-current" />
+        {hasReviews ? (
+          <div className="flex items-center text-[11px] text-gray-500 mb-2 space-x-2">
+            <div className="flex items-center text-yellow-400">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="h-3 w-3 fill-current" />
+              ))}
+            </div>
+            <span>{reviewsCount} reviews</span>
           </div>
-          <span>{ratingText}</span>
-          <span>•</span>
-          <span>{reviewsCount} reviews</span>
-        </div>
+        ) : (
+          <div className="text-[11px] text-gray-400 mb-2">
+            No reviews yet
+          </div>
+        )}
         <div className="flex flex-col mt-auto space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xl font-bold text-love-dark">${product.price.toFixed(2)}</span>
