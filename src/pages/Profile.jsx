@@ -85,17 +85,23 @@ export default function Profile() {
     setOrdersLoading(true);
     const q = query(
       collection(db, 'orders'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', userId)
     );
     const unsub = onSnapshot(
       q,
       snapshot => {
-        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const list = snapshot.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const ta = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
+            const tb = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
+            return tb - ta;
+          });
         setOrders(list);
         setOrdersLoading(false);
       },
-      () => {
+      (error) => {
+        console.error('Orders subscription error:', error);
         setOrders([]);
         setOrdersLoading(false);
       }
