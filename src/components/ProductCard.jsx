@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { Heart, ShoppingCart, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +10,10 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite }) {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
+  const ratingBase = (product.id % 10) / 10;
+  const rating = 4 + ratingBase;
+  const ratingText = rating.toFixed(1);
+  const reviewsCount = 40 + (product.id % 60);
 
   return (
     <motion.div 
@@ -39,10 +43,18 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite }) {
       <div className="p-4 sm:p-5 flex flex-col h-full">
         <div className="text-xs text-love-red font-medium mb-1 uppercase tracking-wider">{product.category}</div>
         <Link to={`/products/${product.id}`}>
-          <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 hover:text-love-red transition-colors truncate">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-1 hover:text-love-red transition-colors truncate">
             {product.name}
           </h3>
         </Link>
+        <div className="flex items-center text-[11px] text-gray-500 mb-2 space-x-1">
+          <div className="flex items-center text-yellow-400">
+            <Star className="h-3 w-3 fill-current" />
+          </div>
+          <span>{ratingText}</span>
+          <span>•</span>
+          <span>{reviewsCount} reviews</span>
+        </div>
         <div className="flex flex-col mt-auto space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xl font-bold text-love-dark">${product.price.toFixed(2)}</span>

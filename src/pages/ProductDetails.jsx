@@ -6,7 +6,7 @@ import { MOCK_PRODUCTS } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -32,16 +32,22 @@ export default function ProductDetails() {
     if (!product) return;
     const q = query(
       collection(db, 'reviews'),
-      where('productId', '==', product.id),
-      orderBy('createdAt', 'desc')
+      where('productId', '==', product.id)
     );
     const unsub = onSnapshot(
       q,
       snapshot => {
-        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const list = snapshot.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const ta = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
+            const tb = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
+            return tb - ta;
+          });
         setReviews(list);
       },
-      () => {
+      (error) => {
+        console.error('Reviews subscription error:', error);
         setReviews([]);
       }
     );

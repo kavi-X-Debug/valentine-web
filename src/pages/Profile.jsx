@@ -606,9 +606,6 @@ export default function Profile() {
                         >
                           <div className="flex items-center justify-between mb-3">
                             <div>
-                              <div className="text-xs font-mono text-gray-500 truncate max-w-[220px]">
-                                {order.id}
-                              </div>
                               <div className="text-xs text-gray-500">
                                 Placed on {createdAt}
                               </div>
@@ -691,9 +688,6 @@ export default function Profile() {
                         >
                           <div className="flex items-center justify-between mb-3">
                             <div>
-                              <div className="text-xs font-mono text-gray-500 truncate max-w-[220px]">
-                                {order.id}
-                              </div>
                               <div className="text-xs text-gray-500">
                                 Placed on {createdAt}
                               </div>
