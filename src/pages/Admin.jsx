@@ -1028,9 +1028,7 @@ LoveCraft support team`;
                     <div className="font-semibold text-gray-800">Customer</div>
                     <div>{address.firstName} {address.lastName}</div>
                     <div className="text-gray-600">{order.userEmail}</div>
-                    {address.phone && (
-                      <div className="text-gray-600">Phone: {address.phone}</div>
-                    )}
+                    <div className="text-gray-600">Phone: {address.phone || 'Not provided'}</div>
                   </div>
                   <div className="space-y-1">
                     <div className="font-semibold text-gray-800">Shipping address</div>
