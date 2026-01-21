@@ -88,6 +88,15 @@ LoveCraft Team`;
       });
   }
 
+  async function sendWelcomeAndMark(userRef, user) {
+    try {
+      await sendWelcomeEmail(user);
+      await updateDoc(userRef, { welcomeSent: true });
+    } catch (err) {
+      console.error('Failed to send welcome email', err);
+    }
+  }
+
   async function ensureUserDoc(user, extra = {}) {
     if (!user) return;
     const userRef = doc(db, 'users', user.uid);
@@ -100,14 +109,12 @@ LoveCraft Team`;
         photoURL: user.photoURL || null,
         createdAt: serverTimestamp(),
         lastLoginAt: serverTimestamp(),
+        welcomeSent: false,
         ...extra
       });
-      try {
-        await sendWelcomeEmail(user);
-      } catch (err) {
-        console.error('Failed to send welcome email', err);
-      }
+      await sendWelcomeAndMark(userRef, user);
     } else {
+      const data = snap.data() || {};
       await updateDoc(userRef, {
         email: user.email || null,
         displayName: user.displayName || null,
@@ -115,6 +122,9 @@ LoveCraft Team`;
         lastLoginAt: serverTimestamp(),
         ...extra
       });
+      if (!data.welcomeSent) {
+        await sendWelcomeAndMark(userRef, user);
+      }
     }
   }
 
