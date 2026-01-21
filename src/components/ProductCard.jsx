@@ -12,6 +12,14 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, rev
   const [showConfirm, setShowConfirm] = useState(false);
   const reviewsCount = reviewSummary?.count || 0;
   const hasReviews = reviewsCount > 0;
+  const latestReviews = Array.isArray(reviewSummary?.latest) ? reviewSummary.latest : [];
+  const firstReview = latestReviews.length > 0 ? latestReviews[0] : null;
+  const firstMessage =
+    firstReview && typeof firstReview.message === 'string'
+      ? firstReview.message.length > 100
+        ? `${firstReview.message.slice(0, 97)}...`
+        : firstReview.message
+      : '';
 
   return (
     <motion.div 
@@ -46,14 +54,29 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, rev
           </h3>
         </Link>
         {hasReviews ? (
-          <div className="flex items-center text-[11px] text-gray-500 mb-2 space-x-2">
-            <div className="flex items-center text-yellow-400">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-3 w-3 fill-current" />
-              ))}
+          <>
+            <div className="flex items-center text-[11px] text-gray-500 mb-1 space-x-2">
+              <div className="flex items-center text-yellow-400">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-3 w-3 fill-current" />
+                ))}
+              </div>
+              <span>{reviewsCount} reviews</span>
             </div>
-            <span>{reviewsCount} reviews</span>
-          </div>
+            {firstReview && firstMessage && (
+              <div className="text-[11px] text-gray-600 mb-2">
+                <span className="italic">“{firstMessage}”</span>{' '}
+                <span className="font-medium text-gray-700">
+                  - {firstReview.userName || 'Someone'}
+                </span>
+              </div>
+            )}
+            {!firstReview && (
+              <div className="text-[11px] text-gray-400 mb-2">
+                No review text yet
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-[11px] text-gray-400 mb-2">
             No reviews yet

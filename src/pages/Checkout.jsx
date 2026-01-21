@@ -13,6 +13,8 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [step, setStep] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState('direct');
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -74,8 +76,30 @@ export default function Checkout() {
     });
   };
 
+  const handleNextStep = () => {
+    const requiredFields = [
+      'firstName',
+      'lastName',
+      'email',
+      'address',
+      'city',
+      'zipCode',
+      'country'
+    ];
+    const missing = requiredFields.filter(field => !String(formData[field] || '').trim());
+    if (missing.length > 0) {
+      setError('Please fill in all shipping details before continuing.');
+      return;
+    }
+    setError('');
+    setStep(2);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (step !== 2) {
+      return;
+    }
     if (!currentUser) {
       setError('Please log in to place an order.');
       navigate('/login');
@@ -91,6 +115,7 @@ export default function Checkout() {
         userEmail: formData.email,
         items: cartItems,
         total: cartTotal,
+        paymentType: paymentMethod === 'direct' ? 'direct' : 'cash_on_delivery',
         shippingDetails: {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -176,9 +201,11 @@ export default function Checkout() {
         <h1 className="text-4xl font-cursive text-love-dark mb-8 text-center">Checkout</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Shipping Form */}
           <div className="bg-white p-8 rounded-xl shadow-md border border-love-pink/20">
             <h2 className="text-2xl font-semibold mb-6 text-gray-800">Shipping Details</h2>
+            <div className="text-xs font-medium text-gray-500 mb-4">
+              {step === 1 ? 'Step 1 of 2: Shipping details' : 'Step 2 of 2: Payment method'}
+            </div>
             {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
             
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -268,57 +295,119 @@ export default function Checkout() {
                 />
               </div>
 
-              <div className="pt-6 border-t border-gray-100">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800">Payment Information</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
-                    <input
-                      type="text"
-                      name="cardNumber"
-                      required
-                      placeholder="0000 0000 0000 0000"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                      value={formData.cardNumber}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                      <input
-                        type="text"
-                        name="expiryDate"
-                        required
-                        placeholder="MM/YY"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                        value={formData.expiryDate}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
-                      <input
-                        type="text"
-                        name="cvv"
-                        required
-                        placeholder="123"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                        value={formData.cvv}
-                        onChange={handleChange}
-                      />
+              {step === 2 && (
+                <>
+                  <div className="pt-6 border-t border-gray-100">
+                    <h3 className="text-xl font-semibold mb-4 text-gray-800">Payment Method</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('direct')}
+                        className={`w-full px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                          paymentMethod === 'direct'
+                            ? 'bg-love-red text-white border-love-red'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        Direct payment
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('cash_on_delivery')}
+                        className={`w-full px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                          paymentMethod === 'cash_on_delivery'
+                            ? 'bg-love-red text-white border-love-red'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        Cash on delivery
+                      </button>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-love-red text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Processing...' : `Pay $${cartTotal.toFixed(2)}`}
-              </button>
+                  {paymentMethod === 'direct' && (
+                    <div className="pt-6 border-t border-gray-100">
+                      <h3 className="text-xl font-semibold mb-4 text-gray-800">Payment Information</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                          <input
+                            type="text"
+                            name="cardNumber"
+                            required={paymentMethod === 'direct'}
+                            placeholder="0000 0000 0000 0000"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                            value={formData.cardNumber}
+                            onChange={handleChange}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                            <input
+                              type="text"
+                              name="expiryDate"
+                              required={paymentMethod === 'direct'}
+                              placeholder="MM/YY"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                              value={formData.expiryDate}
+                              onChange={handleChange}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
+                            <input
+                              type="text"
+                              name="cvv"
+                              required={paymentMethod === 'direct'}
+                              placeholder="123"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                              value={formData.cvv}
+                              onChange={handleChange}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                {step === 1 && (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={handleNextStep}
+                    className="w-full bg-love-red text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next: Payment method
+                  </button>
+                )}
+                {step === 2 && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => setStep(1)}
+                      className="w-full sm:w-auto px-4 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-love-red text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading
+                        ? 'Processing...'
+                        : paymentMethod === 'direct'
+                          ? `Pay $${cartTotal.toFixed(2)}`
+                          : `Place order ($${cartTotal.toFixed(2)})`}
+                    </button>
+                  </>
+                )}
+              </div>
             </form>
           </div>
 
@@ -348,6 +437,10 @@ export default function Checkout() {
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
                   <span>Free</span>
+                </div>
+                <div className="flex justify-between text-gray-600 text-sm">
+                  <span>Payment method</span>
+                  <span>{paymentMethod === 'direct' ? 'Direct payment' : 'Cash on delivery'}</span>
                 </div>
                 <div className="flex justify-between font-bold text-xl text-love-dark pt-2">
                   <span>Total</span>

@@ -139,16 +139,42 @@ export default function Products() {
     const unsub = onSnapshot(
       reviewsRef,
       snapshot => {
+        const list = snapshot.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const ra = a.createdAt;
+            const rb = b.createdAt;
+            let da = 0;
+            let db = 0;
+            if (ra && typeof ra.toDate === 'function') {
+              da = ra.toDate().getTime();
+            } else if (ra && typeof ra.seconds === 'number') {
+              da = ra.seconds * 1000;
+            }
+            if (rb && typeof rb.toDate === 'function') {
+              db = rb.toDate().getTime();
+            } else if (rb && typeof rb.seconds === 'number') {
+              db = rb.seconds * 1000;
+            }
+            return db - da;
+          });
         const summary = {};
-        snapshot.docs.forEach(d => {
-          const data = d.data() || {};
-          const pid = data.productId;
+        list.forEach(item => {
+          const pid = item.productId;
           if (pid === undefined || pid === null) return;
           const key = pid;
           if (!summary[key]) {
-            summary[key] = { count: 0 };
+            summary[key] = { count: 0, latest: [] };
           }
           summary[key].count += 1;
+          const arr = summary[key].latest;
+          if (arr.length < 2 && item.message && typeof item.message === 'string') {
+            arr.push({
+              id: item.id,
+              userName: item.userName || '',
+              message: item.message
+            });
+          }
         });
         setReviewSummary(summary);
       },
