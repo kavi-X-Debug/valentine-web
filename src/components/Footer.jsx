@@ -23,7 +23,6 @@ export default function Footer() {
               <li><Link to="/products" className="hover:text-love-red transition-colors">All Gifts</Link></li>
               <li><Link to="/products?category=handmade" className="hover:text-love-red transition-colors">Handmade Crafts</Link></li>
               <li><Link to="/products?category=personalized" className="hover:text-love-red transition-colors">Personalized Items</Link></li>
-              <li><Link to="/products?category=cards" className="hover:text-love-red transition-colors">Gift Cards</Link></li>
             </ul>
           </div>
 

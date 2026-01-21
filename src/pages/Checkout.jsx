@@ -20,6 +20,7 @@ export default function Checkout() {
     firstName: '',
     lastName: '',
     email: currentUser?.email || '',
+    phone: '',
     address: '',
     city: '',
     zipCode: '',
@@ -55,6 +56,7 @@ export default function Checkout() {
           firstName: firstName || prev.firstName,
           lastName: lastName || prev.lastName,
           email: currentUser.email || prev.email,
+          phone: data.phone || prev.phone,
           address: data.address || prev.address,
           zipCode: data.postalCode || prev.zipCode,
           country: data.country || prev.country
@@ -81,6 +83,7 @@ export default function Checkout() {
       'firstName',
       'lastName',
       'email',
+      'phone',
       'address',
       'city',
       'zipCode',
@@ -119,6 +122,7 @@ export default function Checkout() {
         shippingDetails: {
           firstName: formData.firstName,
           lastName: formData.lastName,
+          phone: formData.phone,
           address: formData.address,
           city: formData.city,
           zipCode: formData.zipCode,
@@ -164,6 +168,7 @@ Shipping to:
 ${formData.firstName} ${formData.lastName}
 ${formData.address}
 ${formData.city}, ${formData.country}
+${formData.phone ? `Phone: ${formData.phone}` : ''}
 
 Thank you for your order!`;
 
@@ -263,6 +268,18 @@ Thank you for your order!`;
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
                   value={formData.email}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  value={formData.phone}
                   onChange={handleChange}
                 />
               </div>

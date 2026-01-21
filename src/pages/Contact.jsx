@@ -129,9 +129,9 @@ export default function Contact() {
                   <Mail className="h-4 w-4 text-love-red" />
                   <span>support@lovecraft.com</span>
                 </a>
-                <a href="tel:+15551234567" className="flex items-center space-x-3 hover:text-love-red transition-colors">
+                <a href="tel:+94763919823" className="flex items-center space-x-3 hover:text-love-red transition-colors">
                   <Phone className="h-4 w-4 text-love-red" />
-                  <span>+1 (555) 123-4567</span>
+                  <span>+94 763919823</span>
                 </a>
               </div>
             </div>

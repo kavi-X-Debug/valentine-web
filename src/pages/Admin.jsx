@@ -4,6 +4,7 @@ import { collection, onSnapshot, orderBy, query, updateDoc, doc, setDoc, increme
 import { Search, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
 import { MOCK_PRODUCTS } from '../data/products';
+import emailjs from '@emailjs/browser';
 
 const STATUS_OPTIONS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -51,6 +52,7 @@ export default function Admin() {
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoryName, setCategoryName] = useState('');
+  const [categoryImage, setCategoryImage] = useState('');
   const [categorySubmitting, setCategorySubmitting] = useState(false);
   const [categoryError, setCategoryError] = useState('');
   const [categorySuccess, setCategorySuccess] = useState('');
@@ -59,6 +61,8 @@ export default function Admin() {
   const [replyDrafts, setReplyDrafts] = useState({});
   const [replySubmittingId, setReplySubmittingId] = useState(null);
   const [inboxShowUnread, setInboxShowUnread] = useState(true);
+  const [outOfStockSendingId, setOutOfStockSendingId] = useState(null);
+  const [outOfStockNotice, setOutOfStockNotice] = useState(null);
 
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -413,6 +417,46 @@ export default function Admin() {
     }
   }
 
+  async function handleCreateCategory(e) {
+    e.preventDefault();
+    const name = categoryName.trim();
+    const image = categoryImage.trim();
+    if (!name || !image) {
+      setCategoryError('Name and image URL are required.');
+      setCategorySuccess('');
+      return;
+    }
+    setCategorySubmitting(true);
+    setCategoryError('');
+    setCategorySuccess('');
+    try {
+      await addDoc(collection(db, 'categories'), {
+        name,
+        image,
+        createdAt: serverTimestamp()
+      });
+      setCategoryName('');
+      setCategoryImage('');
+      setCategorySuccess('Category has been added.');
+    } catch (err) {
+      console.error('Failed to add category', err);
+      if (err && typeof err === 'object') {
+        const code = err.code || '';
+        if (code === 'permission-denied') {
+          setCategoryError('Not allowed to add categories. Check Firestore rules for "categories".');
+        } else if (err.message) {
+          setCategoryError(err.message);
+        } else {
+          setCategoryError('Failed to add category. Please try again.');
+        }
+      } else {
+        setCategoryError('Failed to add category. Please try again.');
+      }
+    } finally {
+      setCategorySubmitting(false);
+    }
+  }
+
   async function handleDeleteProduct(product) {
     if (!product || !product.id) return;
     const confirmed = window.confirm(`Remove product "${product.name}" from the system?`);
@@ -556,6 +600,70 @@ export default function Admin() {
       }
     } finally {
       setUpdatingId(null);
+    }
+  }
+
+  async function handleNotifyOutOfStock(order) {
+    if (!order || !order.id || !order.userEmail) return;
+    setOutOfStockNotice(null);
+    setOutOfStockSendingId(order.id);
+    try {
+      const items = Array.isArray(order.items) ? order.items : [];
+      const itemsLines = items
+        .map(it => {
+          const qty = it.quantity || 1;
+          return `- ${it.name || 'Item'} x${qty}`;
+        })
+        .join('\n');
+      const name = `${order.shippingDetails?.firstName || ''} ${order.shippingDetails?.lastName || ''}`
+        .trim() || 'Customer';
+      const messageBody = `Dear ${name},
+
+We are sorry, but one or more items in your order ${order.id} are currently out of stock.
+
+Order items:
+${itemsLines || 'No items recorded.'}
+
+We will contact you shortly to discuss alternatives or a refund.
+
+With love,
+LoveCraft support team`;
+
+      const emailParams = {
+        order_id: order.id,
+        to_name: name,
+        to_email: order.userEmail,
+        message: messageBody,
+        reply_to: 'support@lovecraft.com'
+      };
+
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const publicKey = 'GNdiN4DMl_vTXQ7iE';
+      if (!serviceId || !templateId) {
+        setOutOfStockNotice({
+          orderId: order.id,
+          type: 'error',
+          message: 'Email service is not configured. Please check EmailJS settings.'
+        });
+        return;
+      }
+
+      await emailjs.send(serviceId, templateId, emailParams, publicKey);
+      setOutOfStockNotice({
+        orderId: order.id,
+        type: 'success',
+        message: 'Customer has been notified about out-of-stock items.'
+      });
+    } catch (err) {
+      console.error('Failed to send out-of-stock email', err);
+      setOutOfStockNotice({
+        orderId: order.id,
+        type: 'error',
+        message: 'Failed to send notification. Please try again.'
+      });
+    } finally {
+      setOutOfStockSendingId(null);
     }
   }
 
@@ -773,6 +881,7 @@ export default function Admin() {
                     <tr>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery</th>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
@@ -784,6 +893,9 @@ export default function Admin() {
                       const created = formatDate(order.createdAt);
                       const fullName = `${order.shippingDetails?.firstName || ''} ${order.shippingDetails?.lastName || ''}`.trim() || 'Guest';
                       const status = order.status || 'pending';
+                      const address = order.shippingDetails || {};
+                      const deliveryLine1 = address.address || '';
+                      const deliveryLine2 = [address.city, address.country].filter(Boolean).join(', ');
                       return (
                         <tr key={order.id} className="align-top">
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
@@ -794,6 +906,19 @@ export default function Admin() {
                             <div className="text-sm font-medium text-gray-900">{fullName}</div>
                             <div className="text-xs text-gray-500 truncate max-w-[140px] sm:max-w-xs">
                               {order.userEmail || 'No email'}
+                            </div>
+                            {address.phone && (
+                              <div className="text-xs text-gray-500 truncate max-w-[140px] sm:max-w-xs">
+                                {address.phone}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                            <div className="text-xs text-gray-700 truncate max-w-[160px] sm:max-w-xs">
+                              {deliveryLine1 || 'No address'}
+                            </div>
+                            <div className="text-[11px] text-gray-400 truncate max-w-[160px] sm:max-w-xs">
+                              {deliveryLine2}
                             </div>
                           </td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
@@ -872,15 +997,40 @@ export default function Admin() {
                     <h2 className="text-lg font-semibold text-love-dark">Order details</h2>
                     <p className="text-xs text-gray-500 font-mono truncate max-w-md">ID: {order.id}</p>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    Status: <span className="font-semibold">{(order.status || 'pending').toUpperCase()}</span>
+                  <div className="flex flex-col items-start sm:items-end gap-2 text-xs text-gray-500">
+                    <div>
+                      Status: <span className="font-semibold">{(order.status || 'pending').toUpperCase()}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleNotifyOutOfStock(order)}
+                      disabled={outOfStockSendingId === order.id || !order.userEmail}
+                      className="inline-flex items-center px-3 py-1.5 rounded-lg border border-love-red text-love-red font-medium hover:bg-love-red hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {outOfStockSendingId === order.id ? 'Sending notification...' : 'Notify out of stock'}
+                    </button>
                   </div>
                 </div>
+                {outOfStockNotice && outOfStockNotice.orderId === order.id && (
+                  <div
+                    className={
+                      'mt-3 text-xs px-3 py-2 rounded-lg ' +
+                      (outOfStockNotice.type === 'success'
+                        ? 'text-green-700 bg-green-100'
+                        : 'text-red-700 bg-red-100')
+                    }
+                  >
+                    {outOfStockNotice.message}
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                   <div className="space-y-1">
                     <div className="font-semibold text-gray-800">Customer</div>
                     <div>{address.firstName} {address.lastName}</div>
                     <div className="text-gray-600">{order.userEmail}</div>
+                    {address.phone && (
+                      <div className="text-gray-600">Phone: {address.phone}</div>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <div className="font-semibold text-gray-800">Shipping address</div>
@@ -930,38 +1080,142 @@ export default function Admin() {
         </>
       )}
       {tab === 'products' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-love-pink/20 p-6">
-            <h2 className="text-lg font-semibold text-love-dark mb-4">Add new product</h2>
-            {productError && (
-              <div className="mb-3 text-sm text-red-700 bg-red-100 px-3 py-2 rounded-lg">
-                {productError}
-              </div>
-            )}
-            {productSuccess && (
-              <div className="mb-3 text-sm text-green-700 bg-green-100 px-3 py-2 rounded-lg">
-                {productSuccess}
-              </div>
-            )}
-            <form onSubmit={handleCreateProduct} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={productForm.name}
-                  onChange={(e) => setProductForm(f => ({ ...f, name: e.target.value }))}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl shadow-sm border border-love-pink/20 p-6">
+              <h2 className="text-lg font-semibold text-love-dark mb-4">Add new product</h2>
+              {productError && (
+                <div className="mb-3 text-sm text-red-700 bg-red-100 px-3 py-2 rounded-lg">
+                  {productError}
+                </div>
+              )}
+              {productSuccess && (
+                <div className="mb-3 text-sm text-green-700 bg-green-100 px-3 py-2 rounded-lg">
+                  {productSuccess}
+                </div>
+              )}
+              <form onSubmit={handleCreateProduct} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                    value={productForm.name}
+                    onChange={(e) => setProductForm(f => ({ ...f, name: e.target.value }))}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                      value={productForm.category}
+                      onChange={(e) => setProductForm(f => ({ ...f, category: e.target.value }))}
+                    >
+                      <option value="">Select category</option>
+                      {productCategories.map(cat => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Price (USD)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                      value={productForm.price}
+                      onChange={(e) => setProductForm(f => ({ ...f, price: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                  <input
+                    type="url"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                    value={productForm.image}
+                    onChange={(e) => setProductForm(f => ({ ...f, image: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Additional image URLs (comma separated)</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                    value={productForm.subImages}
+                    onChange={(e) => setProductForm(f => ({ ...f, subImages: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                    value={productForm.description}
+                    onChange={(e) => setProductForm(f => ({ ...f, description: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                    value={productForm.tags}
+                    onChange={(e) => setProductForm(f => ({ ...f, tags: e.target.value }))}
+                  />
+                </div>
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={productSubmitting}
+                    className="px-4 py-2 rounded-lg bg-love-red text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {productSubmitting ? 'Saving...' : 'Add product'}
+                  </button>
+                </div>
+              </form>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-love-pink/20 p-6">
+              <div className="flex items-center justify-between mb-4 gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-love-dark">Existing products</h2>
+                  {editProductError && (
+                    <div className="mt-1 text-xs text-red-700 bg-red-100 px-2 py-1 rounded">
+                      {editProductError}
+                    </div>
+                  )}
+                  {editProductSuccess && (
+                    <div className="mt-1 text-xs text-green-700 bg-green-100 px-2 py-1 rounded">
+                      {editProductSuccess}
+                    </div>
+                  )}
+                </div>
+                {productsLoading && (
+                  <span className="text-xs text-gray-500">Loading...</span>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, category or tag"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                    value={productListSearch}
+                    onChange={(e) => setProductListSearch(e.target.value)}
+                  />
+                </div>
+                <div className="w-full sm:w-48">
                   <select
                     className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                    value={productForm.category}
-                    onChange={(e) => setProductForm(f => ({ ...f, category: e.target.value }))}
+                    value={productListCategoryFilter}
+                    onChange={(e) => setProductListCategoryFilter(e.target.value)}
                   >
-                    <option value="">Select category</option>
+                    <option value="all">All categories</option>
                     {productCategories.map(cat => (
                       <option key={cat} value={cat}>
                         {cat}
@@ -969,266 +1223,219 @@ export default function Admin() {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (USD)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                    value={productForm.price}
-                    onChange={(e) => setProductForm(f => ({ ...f, price: e.target.value }))}
-                  />
+              </div>
+              {combinedProducts.length === 0 && !productsLoading && (
+                <div className="text-sm text-gray-500">
+                  No products match the current filters.
                 </div>
+              )}
+              {combinedProducts.length > 0 && (
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-1 text-sm">
+                  {combinedProducts.map(prod => {
+                    const isFirestore = prod.source === 'firestore';
+                    const isEditing = isFirestore && editingProductId === prod.id;
+                    return (
+                      <div
+                        key={isFirestore ? prod.id : `mock-${prod.id}`}
+                        className="border border-gray-100 rounded-lg px-3 py-2"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-medium text-gray-800 truncate">
+                              {prod.name || 'Untitled'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {prod.category || 'No category'} • ${Number(prod.price || 0).toFixed(2)}
+                            </div>
+                            <div className="mt-0.5 text-[11px] text-gray-400">
+                              {prod.source === 'mock' ? 'Built-in product' : 'Custom product'}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isFirestore && (
+                              <button
+                                type="button"
+                                onClick={() => startEditProduct(prod)}
+                                className="text-xs px-3 py-1 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                disabled={editProductSubmitting && editingProductId === prod.id}
+                              >
+                                Edit
+                              </button>
+                            )}
+                            {isFirestore && (
+                              <button
+                                type="button"
+                                disabled={deletingProductId === prod.id}
+                                onClick={() => handleDeleteProduct(prod)}
+                                className="text-xs px-3 py-1 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                              >
+                                {deletingProductId === prod.id ? 'Removing...' : 'Remove'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {isEditing && (
+                          <form
+                            onSubmit={handleUpdateProduct}
+                            className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs"
+                          >
+                            <div className="space-y-2">
+                              <div>
+                                <label className="block text-[11px] font-medium text-gray-700 mb-1">Name</label>
+                                <input
+                                  type="text"
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                  value={editProductForm.name}
+                                  onChange={(e) => setEditProductForm(f => ({ ...f, name: e.target.value }))}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-medium text-gray-700 mb-1">Category</label>
+                                <select
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                  value={editProductForm.category}
+                                  onChange={(e) => setEditProductForm(f => ({ ...f, category: e.target.value }))}
+                                >
+                                  <option value="">Select category</option>
+                                  {productCategories.map(cat => (
+                                    <option key={cat} value={cat}>
+                                      {cat}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-medium text-gray-700 mb-1">Price (USD)</label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                  value={editProductForm.price}
+                                  onChange={(e) => setEditProductForm(f => ({ ...f, price: e.target.value }))}
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div>
+                                <label className="block text-[11px] font-medium text-gray-700 mb-1">Image URL</label>
+                                <input
+                                  type="url"
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                  value={editProductForm.image}
+                                  onChange={(e) => setEditProductForm(f => ({ ...f, image: e.target.value }))}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-medium text-gray-700 mb-1">Additional image URLs</label>
+                                <input
+                                  type="text"
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                  value={editProductForm.subImages}
+                                  onChange={(e) => setEditProductForm(f => ({ ...f, subImages: e.target.value }))}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-medium text-gray-700 mb-1">Description</label>
+                                <textarea
+                                  rows={2}
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                  value={editProductForm.description}
+                                  onChange={(e) => setEditProductForm(f => ({ ...f, description: e.target.value }))}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-medium text-gray-700 mb-1">Tags</label>
+                                <input
+                                  type="text"
+                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                  value={editProductForm.tags}
+                                  onChange={(e) => setEditProductForm(f => ({ ...f, tags: e.target.value }))}
+                                />
+                              </div>
+                              <div className="flex justify-end gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={cancelEditProduct}
+                                  className="px-3 py-1 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                  disabled={editProductSubmitting}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  disabled={editProductSubmitting}
+                                  className="px-3 py-1 rounded-lg bg-love-red text-white text-xs font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                  {editProductSubmitting ? 'Saving...' : 'Save'}
+                                </button>
+                              </div>
+                            </div>
+                          </form>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="mt-6 bg-white rounded-xl shadow-sm border border-love-pink/20 p-6">
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-love-dark">Create new category</h2>
+                <p className="text-xs text-gray-500">
+                  Add a category name and image URL for your products.
+                </p>
+              </div>
+              {categoriesLoading && (
+                <span className="text-xs text-gray-500 flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Loading...
+                </span>
+              )}
+            </div>
+            {categoryError && (
+              <div className="mb-3 text-sm text-red-700 bg-red-100 px-3 py-2 rounded-lg">
+                {categoryError}
+              </div>
+            )}
+            {categorySuccess && (
+              <div className="mb-3 text-sm text-green-700 bg-green-100 px-3 py-2 rounded-lg">
+                {categorySuccess}
+              </div>
+            )}
+            <form onSubmit={handleCreateCategory} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  value={categoryName}
+                  onChange={(e) => setCategoryName(e.target.value)}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
                 <input
                   type="url"
                   className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={productForm.image}
-                  onChange={(e) => setProductForm(f => ({ ...f, image: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Additional image URLs (comma separated)</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={productForm.subImages}
-                  onChange={(e) => setProductForm(f => ({ ...f, subImages: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={productForm.description}
-                  onChange={(e) => setProductForm(f => ({ ...f, description: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={productForm.tags}
-                  onChange={(e) => setProductForm(f => ({ ...f, tags: e.target.value }))}
+                  value={categoryImage}
+                  onChange={(e) => setCategoryImage(e.target.value)}
                 />
               </div>
               <div className="pt-2 flex justify-end">
                 <button
                   type="submit"
-                  disabled={productSubmitting}
+                  disabled={categorySubmitting}
                   className="px-4 py-2 rounded-lg bg-love-red text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {productSubmitting ? 'Saving...' : 'Add product'}
+                  {categorySubmitting ? 'Saving...' : 'Create category'}
                 </button>
               </div>
             </form>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-love-pink/20 p-6">
-            <div className="flex items-center justify-between mb-4 gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-love-dark">Existing products</h2>
-                {editProductError && (
-                  <div className="mt-1 text-xs text-red-700 bg-red-100 px-2 py-1 rounded">
-                    {editProductError}
-                  </div>
-                )}
-                {editProductSuccess && (
-                  <div className="mt-1 text-xs text-green-700 bg-green-100 px-2 py-1 rounded">
-                    {editProductSuccess}
-                  </div>
-                )}
-              </div>
-              {productsLoading && (
-                <span className="text-xs text-gray-500">Loading...</span>
-              )}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name, category or tag"
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={productListSearch}
-                  onChange={(e) => setProductListSearch(e.target.value)}
-                />
-              </div>
-              <div className="w-full sm:w-48">
-                <select
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                  value={productListCategoryFilter}
-                  onChange={(e) => setProductListCategoryFilter(e.target.value)}
-                >
-                  <option value="all">All categories</option>
-                  {productCategories.map(cat => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            {combinedProducts.length === 0 && !productsLoading && (
-              <div className="text-sm text-gray-500">
-                No products match the current filters.
-              </div>
-            )}
-            {combinedProducts.length > 0 && (
-              <div className="space-y-2 max-h-80 overflow-y-auto pr-1 text-sm">
-                {combinedProducts.map(prod => {
-                  const isFirestore = prod.source === 'firestore';
-                  const isEditing = isFirestore && editingProductId === prod.id;
-                  return (
-                    <div
-                      key={isFirestore ? prod.id : `mock-${prod.id}`}
-                      className="border border-gray-100 rounded-lg px-3 py-2"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="font-medium text-gray-800 truncate">
-                            {prod.name || 'Untitled'}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {prod.category || 'No category'} • ${Number(prod.price || 0).toFixed(2)}
-                          </div>
-                          <div className="mt-0.5 text-[11px] text-gray-400">
-                            {prod.source === 'mock' ? 'Built-in product' : 'Custom product'}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {isFirestore && (
-                            <button
-                              type="button"
-                              onClick={() => startEditProduct(prod)}
-                              className="text-xs px-3 py-1 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-                              disabled={editProductSubmitting && editingProductId === prod.id}
-                            >
-                              Edit
-                            </button>
-                          )}
-                          {isFirestore && (
-                            <button
-                              type="button"
-                              disabled={deletingProductId === prod.id}
-                              onClick={() => handleDeleteProduct(prod)}
-                              className="text-xs px-3 py-1 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                              {deletingProductId === prod.id ? 'Removing...' : 'Remove'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      {isEditing && (
-                        <form
-                          onSubmit={handleUpdateProduct}
-                          className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs"
-                        >
-                          <div className="space-y-2">
-                            <div>
-                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Name</label>
-                              <input
-                                type="text"
-                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                                value={editProductForm.name}
-                                onChange={(e) => setEditProductForm(f => ({ ...f, name: e.target.value }))}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Category</label>
-                              <select
-                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                                value={editProductForm.category}
-                                onChange={(e) => setEditProductForm(f => ({ ...f, category: e.target.value }))}
-                              >
-                                <option value="">Select category</option>
-                                {productCategories.map(cat => (
-                                  <option key={cat} value={cat}>
-                                    {cat}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Price (USD)</label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                                value={editProductForm.price}
-                                onChange={(e) => setEditProductForm(f => ({ ...f, price: e.target.value }))}
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <div>
-                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Image URL</label>
-                              <input
-                                type="url"
-                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                                value={editProductForm.image}
-                                onChange={(e) => setEditProductForm(f => ({ ...f, image: e.target.value }))}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Additional image URLs</label>
-                              <input
-                                type="text"
-                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                                value={editProductForm.subImages}
-                                onChange={(e) => setEditProductForm(f => ({ ...f, subImages: e.target.value }))}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Description</label>
-                              <textarea
-                                rows={2}
-                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                                value={editProductForm.description}
-                                onChange={(e) => setEditProductForm(f => ({ ...f, description: e.target.value }))}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Tags</label>
-                              <input
-                                type="text"
-                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                                value={editProductForm.tags}
-                                onChange={(e) => setEditProductForm(f => ({ ...f, tags: e.target.value }))}
-                              />
-                            </div>
-                            <div className="flex justify-end gap-2 pt-1">
-                              <button
-                                type="button"
-                                onClick={cancelEditProduct}
-                                className="px-3 py-1 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-                                disabled={editProductSubmitting}
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="submit"
-                                disabled={editProductSubmitting}
-                                className="px-3 py-1 rounded-lg bg-love-red text-white text-xs font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                              >
-                                {editProductSubmitting ? 'Saving...' : 'Save'}
-                              </button>
-                            </div>
-                          </div>
-                        </form>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
+        </>
       )}
       {tab === 'inbox' && (
         <div className="bg-white rounded-xl shadow-sm border border-love-pink/20 p-6">
