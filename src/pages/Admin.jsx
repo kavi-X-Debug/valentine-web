@@ -32,6 +32,20 @@ export default function Admin() {
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [deletingProductId, setDeletingProductId] = useState(null);
+  const [productListSearch, setProductListSearch] = useState('');
+  const [productListCategoryFilter, setProductListCategoryFilter] = useState('all');
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [editProductForm, setEditProductForm] = useState({
+    name: '',
+    category: '',
+    price: '',
+    image: '',
+    description: '',
+    tags: ''
+  });
+  const [editProductSubmitting, setEditProductSubmitting] = useState(false);
+  const [editProductError, setEditProductError] = useState('');
+  const [editProductSuccess, setEditProductSuccess] = useState('');
 
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -54,8 +68,13 @@ export default function Admin() {
   const productCategories = useMemo(() => {
     const set = new Set();
     MOCK_PRODUCTS.forEach(p => set.add(p.category));
+    products.forEach(p => {
+      if (p.category) {
+        set.add(p.category);
+      }
+    });
     return Array.from(set).sort();
-  }, []);
+  }, [products]);
 
   useEffect(() => {
     const ref = collection(db, 'products');
@@ -73,6 +92,46 @@ export default function Admin() {
     );
     return () => unsub();
   }, []);
+
+  const combinedProducts = useMemo(() => {
+    const staticList = MOCK_PRODUCTS.map(p => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      price: p.price,
+      image: p.image,
+      description: p.description,
+      tags: p.tags || [],
+      source: 'mock'
+    }));
+    const firestoreList = products.map(p => ({
+      ...p,
+      source: 'firestore'
+    }));
+    let list = [...firestoreList, ...staticList];
+    if (productListCategoryFilter !== 'all') {
+      const cat = productListCategoryFilter.toLowerCase();
+      list = list.filter(p => (p.category || '').toLowerCase() === cat);
+    }
+    const term = productListSearch.trim().toLowerCase();
+    if (term) {
+      list = list.filter(p => {
+        const name = (p.name || '').toLowerCase();
+        const category = (p.category || '').toLowerCase();
+        const description = (p.description || '').toLowerCase();
+        const tagsText = Array.isArray(p.tags)
+          ? p.tags.join(' ').toLowerCase()
+          : String(p.tags || '').toLowerCase();
+        return (
+          name.includes(term) ||
+          category.includes(term) ||
+          description.includes(term) ||
+          tagsText.includes(term)
+        );
+      });
+    }
+    return list;
+  }, [products, productListSearch, productListCategoryFilter]);
 
   const filteredOrders = useMemo(() => {
     let list = orders;
@@ -255,7 +314,18 @@ export default function Admin() {
       setProductSuccess('Product has been added.');
     } catch (err) {
       console.error('Failed to add product', err);
-      setProductError('Failed to add product. Please try again.');
+      if (err && typeof err === 'object') {
+        const code = err.code || '';
+        if (code === 'permission-denied') {
+          setProductError('Not allowed to add products. Check Firestore rules for "products".');
+        } else if (err.message) {
+          setProductError(err.message);
+        } else {
+          setProductError('Failed to add product. Please try again.');
+        }
+      } else {
+        setProductError('Failed to add product. Please try again.');
+      }
     } finally {
       setProductSubmitting(false);
     }
@@ -272,6 +342,94 @@ export default function Admin() {
     } catch {
     } finally {
       setDeletingProductId(null);
+    }
+  }
+
+  function startEditProduct(prod) {
+    if (!prod || prod.source !== 'firestore') return;
+    setEditingProductId(prod.id);
+    setEditProductError('');
+    setEditProductSuccess('');
+    const tagsValue = Array.isArray(prod.tags) ? prod.tags.join(', ') : String(prod.tags || '');
+    setEditProductForm({
+      name: prod.name || '',
+      category: prod.category || '',
+      price: prod.price != null ? String(prod.price) : '',
+      image: prod.image || '',
+      description: prod.description || '',
+      tags: tagsValue
+    });
+  }
+
+  function cancelEditProduct() {
+    setEditingProductId(null);
+    setEditProductForm({
+      name: '',
+      category: '',
+      price: '',
+      image: '',
+      description: '',
+      tags: ''
+    });
+    setEditProductError('');
+    setEditProductSuccess('');
+  }
+
+  async function handleUpdateProduct(e) {
+    e.preventDefault();
+    if (!editingProductId) return;
+    const name = editProductForm.name.trim();
+    const category = editProductForm.category.trim();
+    const priceRaw = editProductForm.price.trim();
+    const image = editProductForm.image.trim();
+    const description = editProductForm.description.trim();
+    const tagsRaw = editProductForm.tags.trim();
+    if (!name || !category || !priceRaw) {
+      setEditProductError('Name, category and price are required.');
+      setEditProductSuccess('');
+      return;
+    }
+    const price = Number(priceRaw);
+    if (!Number.isFinite(price) || price <= 0) {
+      setEditProductError('Enter a valid price greater than 0.');
+      setEditProductSuccess('');
+      return;
+    }
+    setEditProductSubmitting(true);
+    setEditProductError('');
+    setEditProductSuccess('');
+    try {
+      const tags = tagsRaw
+        ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean)
+        : [];
+      const ref = doc(db, 'products', editingProductId);
+      await updateDoc(ref, {
+        name,
+        category,
+        price,
+        image,
+        description,
+        tags
+      });
+      setEditProductSuccess('Product has been updated.');
+      setEditingProductId(null);
+      setEditProductForm({
+        name: '',
+        category: '',
+        price: '',
+        image: '',
+        description: '',
+        tags: ''
+      });
+    } catch (err) {
+      console.error('Failed to update product', err);
+      if (err && typeof err === 'object' && err.message) {
+        setEditProductError(err.message);
+      } else {
+        setEditProductError('Failed to update product. Please try again.');
+      }
+    } finally {
+      setEditProductSubmitting(false);
     }
   }
 
@@ -760,42 +918,193 @@ export default function Admin() {
             </form>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-love-pink/20 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-love-dark">Existing products</h2>
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-love-dark">Existing products</h2>
+                {editProductError && (
+                  <div className="mt-1 text-xs text-red-700 bg-red-100 px-2 py-1 rounded">
+                    {editProductError}
+                  </div>
+                )}
+                {editProductSuccess && (
+                  <div className="mt-1 text-xs text-green-700 bg-green-100 px-2 py-1 rounded">
+                    {editProductSuccess}
+                  </div>
+                )}
+              </div>
               {productsLoading && (
                 <span className="text-xs text-gray-500">Loading...</span>
               )}
             </div>
-            {products.length === 0 && !productsLoading && (
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by name, category or tag"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  value={productListSearch}
+                  onChange={(e) => setProductListSearch(e.target.value)}
+                />
+              </div>
+              <div className="w-full sm:w-48">
+                <select
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  value={productListCategoryFilter}
+                  onChange={(e) => setProductListCategoryFilter(e.target.value)}
+                >
+                  <option value="all">All categories</option>
+                  {productCategories.map(cat => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {combinedProducts.length === 0 && !productsLoading && (
               <div className="text-sm text-gray-500">
-                No products stored in the system.
+                No products match the current filters.
               </div>
             )}
-            {products.length > 0 && (
+            {combinedProducts.length > 0 && (
               <div className="space-y-2 max-h-80 overflow-y-auto pr-1 text-sm">
-                {products.map(prod => (
-                  <div
-                    key={prod.id}
-                    className="flex items-center justify-between gap-3 border border-gray-100 rounded-lg px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <div className="font-medium text-gray-800 truncate">
-                        {prod.name || 'Untitled'}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {prod.category || 'No category'} • ${Number(prod.price || 0).toFixed(2)}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={deletingProductId === prod.id}
-                      onClick={() => handleDeleteProduct(prod)}
-                      className="text-xs px-3 py-1 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                {combinedProducts.map(prod => {
+                  const isFirestore = prod.source === 'firestore';
+                  const isEditing = isFirestore && editingProductId === prod.id;
+                  return (
+                    <div
+                      key={isFirestore ? prod.id : `mock-${prod.id}`}
+                      className="border border-gray-100 rounded-lg px-3 py-2"
                     >
-                      {deletingProductId === prod.id ? 'Removing...' : 'Remove'}
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-medium text-gray-800 truncate">
+                            {prod.name || 'Untitled'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {prod.category || 'No category'} • ${Number(prod.price || 0).toFixed(2)}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-gray-400">
+                            {prod.source === 'mock' ? 'Built-in product' : 'Custom product'}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isFirestore && (
+                            <button
+                              type="button"
+                              onClick={() => startEditProduct(prod)}
+                              className="text-xs px-3 py-1 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                              disabled={editProductSubmitting && editingProductId === prod.id}
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {isFirestore && (
+                            <button
+                              type="button"
+                              disabled={deletingProductId === prod.id}
+                              onClick={() => handleDeleteProduct(prod)}
+                              className="text-xs px-3 py-1 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                              {deletingProductId === prod.id ? 'Removing...' : 'Remove'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {isEditing && (
+                        <form
+                          onSubmit={handleUpdateProduct}
+                          className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs"
+                        >
+                          <div className="space-y-2">
+                            <div>
+                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Name</label>
+                              <input
+                                type="text"
+                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                value={editProductForm.name}
+                                onChange={(e) => setEditProductForm(f => ({ ...f, name: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Category</label>
+                              <select
+                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                value={editProductForm.category}
+                                onChange={(e) => setEditProductForm(f => ({ ...f, category: e.target.value }))}
+                              >
+                                <option value="">Select category</option>
+                                {productCategories.map(cat => (
+                                  <option key={cat} value={cat}>
+                                    {cat}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Price (USD)</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                value={editProductForm.price}
+                                onChange={(e) => setEditProductForm(f => ({ ...f, price: e.target.value }))}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div>
+                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Image URL</label>
+                              <input
+                                type="url"
+                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                value={editProductForm.image}
+                                onChange={(e) => setEditProductForm(f => ({ ...f, image: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Description</label>
+                              <textarea
+                                rows={2}
+                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                value={editProductForm.description}
+                                onChange={(e) => setEditProductForm(f => ({ ...f, description: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Tags</label>
+                              <input
+                                type="text"
+                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                value={editProductForm.tags}
+                                onChange={(e) => setEditProductForm(f => ({ ...f, tags: e.target.value }))}
+                              />
+                            </div>
+                            <div className="flex justify-end gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={cancelEditProduct}
+                                className="px-3 py-1 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                disabled={editProductSubmitting}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                disabled={editProductSubmitting}
+                                className="px-3 py-1 rounded-lg bg-love-red text-white text-xs font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                              >
+                                {editProductSubmitting ? 'Saving...' : 'Save'}
+                              </button>
+                            </div>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
