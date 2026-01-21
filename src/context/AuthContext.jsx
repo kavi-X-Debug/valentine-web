@@ -7,11 +7,11 @@ import {
   signInWithPopup, 
   signOut,
   sendPasswordResetEmail,
-  fetchSignInMethodsForEmail,
-  sendEmailVerification
+  fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { updateProfile, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import emailjs from '@emailjs/browser';
 
 const AuthContext = createContext();
 
@@ -88,12 +88,44 @@ export function AuthProvider({ children }) {
   }
 
   function sendWelcomeEmail(user) {
-    if (!user) return Promise.resolve();
-    const actionCodeSettings = {
-      url: 'https://valentine-webp.vercel.app/login',
-      handleCodeInApp: false
+    if (!user || !user.email) return Promise.resolve();
+    const name =
+      user.displayName ||
+      (user.email ? user.email.split('@')[0] : '') ||
+      'there';
+
+    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+    const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+    const publicKey = 'GNdiN4DMl_vTXQ7iE';
+
+    if (!serviceId || !templateId || !publicKey) {
+      return Promise.resolve();
+    }
+
+    const messageBody = `Hi ${name},
+
+Welcome to LoveCraft – we’re so happy you’re here! 💖
+
+Your account has been created successfully, which means you’re now ready to:
+- Discover romantic gifts in our Valentine collections
+- Save your favorite items to your wishlist
+- Track your orders and delivery updates in one place
+
+Whenever you’re ready to surprise someone special, just log in and we’ll help you pick
+the perfect colors and gifts for your moment.
+
+With warm colors and kind wishes,
+LoveCraft Team`;
+
+    const emailParams = {
+      order_id: 'WELCOME',
+      to_name: name,
+      to_email: user.email,
+      message: messageBody,
+      reply_to: 'support@lovecraft.com'
     };
-    return sendEmailVerification(user, actionCodeSettings);
+
+    return emailjs.send(serviceId, templateId, emailParams, publicKey);
   }
 
   async function changeEmail(newEmail, currentPassword) {
