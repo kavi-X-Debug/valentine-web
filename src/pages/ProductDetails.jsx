@@ -6,11 +6,12 @@ import { MOCK_PRODUCTS } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc } from 'firebase/firestore';
 
 export default function ProductDetails() {
   const { id } = useParams();
-  const product = MOCK_PRODUCTS.find(p => p.id === parseInt(id));
+  const [product, setProduct] = useState(null);
+  const [productLoading, setProductLoading] = useState(true);
   const [customText, setCustomText] = useState('');
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
@@ -19,6 +20,66 @@ export default function ProductDetails() {
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
   const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadProduct() {
+      let found = null;
+      if (id) {
+        const numericId = Number(id);
+        if (!Number.isNaN(numericId)) {
+          found = MOCK_PRODUCTS.find(p => p.id === numericId);
+        }
+      }
+      if (found) {
+        if (isMounted) {
+          setProduct(found);
+          setProductLoading(false);
+        }
+        return;
+      }
+      if (!id) {
+        if (isMounted) {
+          setProduct(null);
+          setProductLoading(false);
+        }
+        return;
+      }
+      setProductLoading(true);
+      try {
+        const ref = doc(db, 'products', id);
+        const snap = await getDoc(ref);
+        if (!isMounted) return;
+        if (snap.exists()) {
+          const data = snap.data() || {};
+          setProduct({
+            id: snap.id,
+            name: data.name || '',
+            category: data.category || '',
+            price: Number(data.price || 0),
+            image: data.image || '',
+            description: data.description || '',
+            tags: Array.isArray(data.tags) ? data.tags : []
+          });
+        } else {
+          setProduct(null);
+        }
+      } catch (e) {
+        console.error('Failed to load product', e);
+        if (isMounted) {
+          setProduct(null);
+        }
+      } finally {
+        if (isMounted) {
+          setProductLoading(false);
+        }
+      }
+    }
+    loadProduct();
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
 
   const handleAddToCart = () => {
     if (!currentUser) {

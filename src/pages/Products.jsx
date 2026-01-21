@@ -32,13 +32,40 @@ export default function Products() {
   const [pricePreset, setPricePreset] = useState('none');
   const [searchParams] = useSearchParams();
   const [reviewSummary, setReviewSummary] = useState({});
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
 
-  const randomizedProducts = useMemo(() => shuffleArray(MOCK_PRODUCTS), []);
+  const allProducts = useMemo(() => {
+    const staticList = MOCK_PRODUCTS.map(p => ({
+      ...p,
+      source: 'mock'
+    }));
+    const firestoreList = products
+      .filter(p => p && p.active !== false)
+      .map(p => ({
+        id: p.id,
+        name: p.name || '',
+        category: p.category || '',
+        price: Number(p.price || 0),
+        image: p.image || '',
+        description: p.description || '',
+        tags: Array.isArray(p.tags) ? p.tags : [],
+        source: 'firestore'
+      }));
+    return [...firestoreList, ...staticList];
+  }, [products]);
+
+  const randomizedProducts = useMemo(() => shuffleArray(allProducts), [allProducts]);
 
   const categories = useMemo(() => {
     const set = new Set(MOCK_PRODUCTS.map(p => p.category));
+    products.forEach(p => {
+      if (p && p.category) {
+        set.add(p.category);
+      }
+    });
     return ['All', ...Array.from(set)];
-  }, []);
+  }, [products]);
 
   const displayedProducts = useMemo(() => {
     let arr = filter === 'All' ? randomizedProducts : randomizedProducts.filter(p => p.category === filter);
@@ -96,7 +123,25 @@ export default function Products() {
   const allTags = useMemo(() => {
     const s = new Set();
     MOCK_PRODUCTS.forEach(p => (p.tags || []).forEach(t => s.add(t)));
+    products.forEach(p => (Array.isArray(p.tags) ? p.tags : []).forEach(t => s.add(t)));
     return Array.from(s).sort();
+  }, [products]);
+
+  useEffect(() => {
+    const ref = collection(db, 'products');
+    const unsub = onSnapshot(
+      ref,
+      snapshot => {
+        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setProducts(list);
+        setProductsLoading(false);
+      },
+      () => {
+        setProducts([]);
+        setProductsLoading(false);
+      }
+    );
+    return () => unsub();
   }, []);
 
   useEffect(() => {
