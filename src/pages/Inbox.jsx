@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,7 @@ export default function Inbox() {
   const { currentUser } = useAuth();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const hasMessages = !loading && messages.length > 0;
 
   useEffect(() => {
     if (!currentUser) {
@@ -88,20 +89,20 @@ export default function Inbox() {
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="relative"
       >
         <motion.div
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-x-10 -top-10 h-40 bg-gradient-to-r from-love-light/60 via-white to-love-light/60 blur-3xl opacity-60"
-          initial={{ opacity: 0, y: -10 }}
+          className="pointer-events-none absolute -inset-x-10 -top-10 h-48 bg-gradient-to-r from-love-red/20 via-love-pink/20 to-love-light/50 blur-3xl opacity-70"
+          initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: 0.9 }}
         />
         <motion.div
           layout
-          className="bg-white rounded-2xl shadow-lg border border-love-pink/20 p-6 sm:p-8 relative overflow-hidden"
-          whileHover={{ y: -2 }}
+          className="bg-gradient-to-br from-white via-love-light/40 to-love-pink/10 rounded-3xl shadow-xl border border-love-pink/30 p-6 sm:p-8 relative overflow-hidden"
+          whileHover={{ y: -3, boxShadow: '0 20px 40px rgba(15,23,42,0.18)' }}
           transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         >
           <div className="flex items-center justify-between gap-3 mb-4">
@@ -109,7 +110,7 @@ export default function Inbox() {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4 }}
-              className="text-2xl sm:text-3xl font-cursive text-love-dark"
+              className="text-2xl sm:text-3xl font-cursive text-love-dark tracking-tight"
             >
               Your Inbox
             </motion.h1>
@@ -117,86 +118,132 @@ export default function Inbox() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: 0.1 }}
-              className="hidden sm:flex items-center text-[11px] text-gray-500 bg-love-light/40 px-3 py-1 rounded-full border border-love-pink/40"
+              className="hidden sm:flex items-center text-[11px] text-love-dark bg-white/70 backdrop-blur px-3 py-1 rounded-full border border-love-pink/40 shadow-sm"
             >
-              <span className="w-2 h-2 rounded-full bg-love-red mr-2 animate-pulse" />
-              Real-time updates from the store team
+              <span className="w-2 h-2 rounded-full bg-love-red mr-2 animate-ping" />
+              Real-time replies from the store team
             </motion.div>
           </div>
 
-          {loading ? (
-            <div className="text-gray-600 text-sm">Loading your messages...</div>
-          ) : messages.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="text-gray-600 text-sm"
-            >
-              You have no messages yet. Ask questions on product pages to see replies here.
-            </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.05 }}
-              className="space-y-4 max-h-[32rem] overflow-y-auto pr-1"
-            >
-              {messages.map((m, index) => {
-                const createdAt = m.createdAt && m.createdAt.toDate
-                  ? m.createdAt.toDate().toLocaleString()
-                  : '';
-                const answeredAt = m.answeredAt && m.answeredAt.toDate
-                  ? m.answeredAt.toDate().toLocaleString()
-                  : '';
-                const hasAnswer = m.answer && String(m.answer).trim();
-                return (
-                  <motion.div
-                    key={m.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: 0.03 * index }}
-                    className="border border-gray-100 rounded-2xl p-4 bg-gray-50"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-sm font-semibold text-gray-800">
-                        {m.productName || 'Product question'}
-                      </div>
-                      <div className="text-[11px] text-gray-400">
-                        {createdAt}
-                      </div>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-end">
-                        <div className="max-w-[80%] rounded-2xl px-3 py-2 bg-love-red text-white text-xs sm:text-sm">
-                          {m.question}
-                        </div>
-                      </div>
-                      {hasAnswer && (
-                        <div className="flex justify-start">
-                          <div className="max-w-[80%] rounded-2xl px-3 py-2 bg-white border border-love-pink/40 text-xs sm:text-sm text-gray-800">
-                            {m.answer}
-                            {answeredAt && (
-                              <div className="mt-1 text-[10px] text-gray-400">
-                                Replied at {answeredAt}
-                              </div>
+          <div className="mt-2">
+            {loading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center gap-2 text-gray-600 text-sm"
+              >
+                <span className="inline-flex h-3 w-3 rounded-full bg-love-red/70 animate-pulse" />
+                Loading your messages...
+              </motion.div>
+            )}
+
+            {!loading && !hasMessages && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col items-center justify-center text-center text-gray-600 text-sm py-6"
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.4, delay: 0.1 }}
+                  className="mb-3 inline-flex items-center justify-center h-12 w-12 rounded-full bg-gradient-to-br from-love-red to-love-pink text-white shadow-md"
+                >
+                  <span className="text-xl">💌</span>
+                </motion.div>
+                <div className="font-medium mb-1">No messages yet</div>
+                <div className="text-xs text-gray-500 max-w-xs">
+                  Ask questions on product pages and you&apos;ll see all replies from the store here.
+                </div>
+              </motion.div>
+            )}
+
+            <AnimatePresence>
+              {hasMessages && (
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.4, delay: 0.05 }}
+                  className="space-y-4 max-h-[32rem] overflow-y-auto pr-1"
+                >
+                  {messages.map((m, index) => {
+                    const createdAt = m.createdAt && m.createdAt.toDate
+                      ? m.createdAt.toDate().toLocaleString()
+                      : '';
+                    const answeredAt = m.answeredAt && m.answeredAt.toDate
+                      ? m.answeredAt.toDate().toLocaleString()
+                      : '';
+                    const hasAnswer = m.answer && String(m.answer).trim();
+                    return (
+                      <motion.div
+                        key={m.id}
+                        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                        transition={{ duration: 0.35, delay: 0.03 * index }}
+                        className="border border-love-pink/30 rounded-2xl p-4 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow"
+                        whileHover={{ y: -2 }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-sm font-semibold text-love-dark">
+                            {m.productName || 'Product question'}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {hasAnswer ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100">
+                                Replied
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-100">
+                                Waiting reply
+                              </span>
                             )}
+                            <div className="text-[11px] text-gray-400">
+                              {createdAt}
+                            </div>
                           </div>
                         </div>
-                      )}
-                      {!hasAnswer && (
-                        <div className="flex justify-start">
-                          <div className="text-[11px] text-gray-500">
-                            Waiting for reply from the store
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-end">
+                            <motion.div
+                              className="max-w-[80%] rounded-2xl px-3 py-2 text-xs sm:text-sm text-white bg-gradient-to-br from-love-red via-rose-500 to-love-pink shadow-sm"
+                              whileHover={{ scale: 1.01 }}
+                            >
+                              {m.question}
+                            </motion.div>
                           </div>
+                          {hasAnswer && (
+                            <div className="flex justify-start">
+                              <motion.div
+                                className="max-w-[80%] rounded-2xl px-3 py-2 bg-love-light/70 border border-love-pink/40 text-xs sm:text-sm text-gray-800 shadow-sm"
+                                whileHover={{ scale: 1.01 }}
+                              >
+                                {m.answer}
+                                {answeredAt && (
+                                  <div className="mt-1 text-[10px] text-gray-500">
+                                    Replied at {answeredAt}
+                                  </div>
+                                )}
+                              </motion.div>
+                            </div>
+                          )}
+                          {!hasAnswer && (
+                            <div className="flex justify-start">
+                              <div className="text-[11px] text-gray-500">
+                                Waiting for reply from the store
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          )}
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
       </motion.div>
     </div>
