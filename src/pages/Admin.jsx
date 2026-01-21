@@ -58,6 +58,7 @@ export default function Admin() {
   const [messagesLoading, setMessagesLoading] = useState(true);
   const [replyDrafts, setReplyDrafts] = useState({});
   const [replySubmittingId, setReplySubmittingId] = useState(null);
+  const [inboxShowUnread, setInboxShowUnread] = useState(true);
 
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -1237,12 +1238,33 @@ export default function Admin() {
                 View questions asked on product pages and send replies.
               </p>
             </div>
-            {messagesLoading && (
-              <span className="text-xs text-gray-500 flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Loading...
-              </span>
-            )}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-[11px] sm:text-xs text-gray-600">
+                <span className={inboxShowUnread ? 'font-semibold text-love-dark' : ''}>Unread</span>
+                <button
+                  type="button"
+                  onClick={() => setInboxShowUnread(prev => !prev)}
+                  className={
+                    'relative w-10 h-5 rounded-full transition-colors duration-200 ' +
+                    (inboxShowUnread ? 'bg-love-red' : 'bg-gray-300')
+                  }
+                >
+                  <span
+                    className={
+                      'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-200 ' +
+                      (inboxShowUnread ? 'translate-x-5' : 'translate-x-1')
+                    }
+                  />
+                </button>
+                <span className={!inboxShowUnread ? 'font-semibold text-love-dark' : ''}>Read</span>
+              </div>
+              {messagesLoading && (
+                <span className="text-xs text-gray-500 flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Loading...
+                </span>
+              )}
+            </div>
           </div>
           {messages.length === 0 && !messagesLoading && (
             <div className="text-sm text-gray-500">
@@ -1251,7 +1273,12 @@ export default function Admin() {
           )}
           {messages.length > 0 && (
             <div className="space-y-4 max-h-[32rem] overflow-y-auto pr-1 text-sm">
-              {messages.map(message => {
+              {messages
+                .filter(message => {
+                  const hasAnswer = message.answer && String(message.answer).trim();
+                  return inboxShowUnread ? !hasAnswer : !!hasAnswer;
+                })
+                .map(message => {
                 const createdAt = message.createdAt && message.createdAt.toDate
                   ? message.createdAt.toDate().toLocaleString()
                   : '';

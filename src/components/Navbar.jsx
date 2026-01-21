@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { Heart, ShoppingCart, User, Menu, X, LogOut } from 'lucide-react';
+import { Heart, ShoppingCart, User, Menu, X, LogOut, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '../firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 
 export default function Navbar() {
   const { currentUser, logout } = useAuth();
@@ -16,6 +16,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
+  const [inboxCount, setInboxCount] = useState(0);
 
   const handleLogout = async () => {
     try {
@@ -66,6 +67,33 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    if (!currentUser) {
+      setInboxCount(0);
+      return;
+    }
+    const userId = currentUser.uid;
+    if (!userId) {
+      setInboxCount(0);
+      return;
+    }
+    const q = query(
+      collection(db, 'productMessages'),
+      where('userId', '==', userId),
+      where('status', '==', 'answered')
+    );
+    const unsub = onSnapshot(
+      q,
+      snapshot => {
+        setInboxCount(snapshot.size || 0);
+      },
+      () => {
+        setInboxCount(0);
+      }
+    );
+    return () => unsub();
+  }, [currentUser]);
+
   const linkBase = "relative group text-love-dark font-medium font-oldSans";
   function NavLink({ to, children }) {
     const active = location.pathname === to;
@@ -111,6 +139,18 @@ export default function Navbar() {
               <span>Wish</span>
               <span className="absolute left-0 -bottom-1 h-0.5 bg-gradient-to-r from-love-red to-love-pink w-0 group-hover:w-full transition-all duration-300" />
             </a>
+            {currentUser && (
+              <Link to="/inbox" className="relative group text-love-dark hover:text-love-red transition-colors">
+                <motion.div whileHover={{ scale: 1.1 }} className="relative">
+                  <Mail className="h-6 w-6" />
+                  {inboxCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-love-red text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-bounce">
+                      {inboxCount > 9 ? '9+' : inboxCount}
+                    </span>
+                  )}
+                </motion.div>
+              </Link>
+            )}
             <Link to="/cart" className="relative group text-love-dark hover:text-love-red transition-colors">
               <motion.div whileHover={{ scale: 1.1 }} className="relative">
                 <ShoppingCart className="h-6 w-6" />
@@ -174,6 +214,9 @@ export default function Navbar() {
               <Link to="/categories" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Categories</Link>
               <Link to="/contact" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Contact</Link>
               <a href="/valentine-surprise/index.html" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Wish</a>
+              {currentUser && (
+                <Link to="/inbox" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Inbox</Link>
+              )}
               <Link to="/cart" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-love-dark hover:text-love-red hover:bg-love-light">Cart</Link>
               {currentUser ? (
                 <>

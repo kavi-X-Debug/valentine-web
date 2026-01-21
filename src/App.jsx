@@ -21,6 +21,7 @@ const Contact = lazy(() => import('./pages/Contact'));
 const Faq = lazy(() => import('./pages/Faq'));
 const Returns = lazy(() => import('./pages/Returns'));
 const Categories = lazy(() => import('./pages/Categories'));
+const Inbox = lazy(() => import('./pages/Inbox'));
 
 function TruckLoader() {
   return (
@@ -87,6 +88,14 @@ function App() {
                   element={
                     <PrivateRoute>
                       <Profile />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/inbox" 
+                  element={
+                    <PrivateRoute>
+                      <Inbox />
                     </PrivateRoute>
                   } 
                 />

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Heart, Star, Check, Download } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Heart, Star, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MOCK_PRODUCTS } from '../data/products';
 import { useCart } from '../context/CartContext';
@@ -12,7 +12,6 @@ export default function ProductDetails() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [productLoading, setProductLoading] = useState(true);
-  const [customText, setCustomText] = useState('');
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
@@ -104,7 +103,6 @@ export default function ProductDetails() {
     if (!product || !currentUser) return;
     const q = query(
       collection(db, 'productMessages'),
-      where('productId', '==', product.id),
       where('userId', '==', currentUser.uid)
     );
     const unsub = onSnapshot(
@@ -112,6 +110,7 @@ export default function ProductDetails() {
       snapshot => {
         const list = snapshot.docs
           .map(d => ({ id: d.id, ...d.data() }))
+          .filter(m => m.productId === product.id)
           .sort((a, b) => {
             const ta = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
             const tb = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
@@ -119,7 +118,8 @@ export default function ProductDetails() {
           });
         setQuestions(list);
       },
-      () => {
+      (error) => {
+        console.error('Product questions subscription error:', error);
         setQuestions([]);
       }
     );
@@ -154,86 +154,6 @@ export default function ProductDetails() {
   const imageList = product
     ? [product.image, ...(Array.isArray(product.subImages) ? product.subImages : [])].filter(Boolean)
     : [];
-
-  function downloadWishImage() {
-    const size = 1080;
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    const g = ctx.createLinearGradient(0, 0, size, size);
-    g.addColorStop(0, '#ffe4e6');
-    g.addColorStop(1, '#fb7185');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-    function heart(x, y, s, c) {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.scale(s, s);
-      ctx.beginPath();
-      ctx.moveTo(0, -10);
-      ctx.bezierCurveTo(12, -28, 40, -18, 40, 6);
-      ctx.bezierCurveTo(40, 26, 18, 40, 0, 52);
-      ctx.bezierCurveTo(-18, 40, -40, 26, -40, 6);
-      ctx.bezierCurveTo(-40, -18, -12, -28, 0, -10);
-      ctx.closePath();
-      ctx.fillStyle = c;
-      ctx.fill();
-      ctx.restore();
-    }
-    for (let i = 0; i < 24; i++) {
-      const x = Math.random() * size;
-      const y = Math.random() * size;
-      const s = 0.3 + Math.random() * 0.8;
-      const c = Math.random() < 0.5 ? 'rgba(225,29,72,0.15)' : 'rgba(251,113,133,0.15)';
-      heart(x, y, s, c);
-    }
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    const r = 80;
-    ctx.beginPath();
-    ctx.moveTo(140 + r, 180);
-    ctx.arcTo(size - 140, 180, size - 140, size - 180, r);
-    ctx.arcTo(size - 140, size - 180, 140, size - 180, r);
-    ctx.arcTo(140, size - 180, 140, 180, r);
-    ctx.arcTo(140, 180, size - 140, 180, r);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#e11d48';
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 72px Georgia';
-    ctx.fillText('With Love', size / 2, 300);
-    ctx.fillStyle = '#0f172a';
-    ctx.font = '600 56px Georgia';
-    ctx.fillText(product.name, size / 2, 390);
-    ctx.fillStyle = '#334155';
-    ctx.font = 'italic 36px Georgia';
-    const msg = customText?.trim() ? customText.trim() : 'You make my world brighter';
-    const lines = [];
-    let current = '';
-    const words = msg.split(/\s+/);
-    words.forEach(w => {
-      const test = current ? current + ' ' + w : w;
-      if (ctx.measureText(test).width > size - 360) {
-        lines.push(current);
-        current = w;
-      } else {
-        current = test;
-      }
-    });
-    if (current) lines.push(current);
-    lines.slice(0, 4).forEach((line, i) => {
-      ctx.fillText(line, size / 2, 480 + i * 48);
-    });
-    ctx.fillStyle = '#e11d48';
-    heart(size / 2, 620, 1.2, '#e11d48');
-    ctx.fillStyle = '#64748b';
-    ctx.font = '500 28px Georgia';
-    ctx.fillText('LoveCraft', size / 2, size - 220);
-    const link = document.createElement('a');
-    link.download = 'wish-card.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  }
 
   async function handleSubmitQuestion(e) {
     e.preventDefault();
@@ -452,13 +372,6 @@ export default function ProductDetails() {
               >
                 {added ? <Check className="h-5 w-5" /> : <ShoppingCart className="h-5 w-5" />}
                 <span>{added ? 'Added to Cart' : 'Add to Cart'}</span>
-              </button>
-              <button
-                onClick={downloadWishImage}
-                className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-colors shadow-md flex items-center justify-center space-x-2 bg-white text-love-red border border-love-pink/30 hover:bg-love-light"
-              >
-                <Download className="h-5 w-5" />
-                <span>Download Wish Image</span>
               </button>
               <button className="w-full sm:w-auto p-3 border border-gray-300 rounded-lg hover:border-love-red hover:text-love-red transition-colors flex items-center justify-center">
                 <Heart className="h-5 w-5" />
