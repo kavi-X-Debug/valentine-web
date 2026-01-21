@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
-import { doc, getDoc, setDoc, updateDoc, arrayRemove, collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayRemove, collection, query, where, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { motion } from 'framer-motion';
 import { MOCK_PRODUCTS } from '../data/products';
@@ -240,6 +240,29 @@ export default function Profile() {
     setReviewSubmitting(true);
     try {
       const reviewsRef = collection(db, 'reviews');
+
+      const existingQuery = query(
+        reviewsRef,
+        where('orderId', '==', order.id || null)
+      );
+      const existingSnapshot = await getDocs(existingQuery);
+      const alreadyReviewed = existingSnapshot.docs.some(docSnap => {
+        const data = docSnap.data();
+        return data && data.userId === currentUser.uid && data.productId === item.id;
+      });
+
+      if (alreadyReviewed) {
+        setReviewText('');
+        setReviewOrderId(null);
+        setReviewProductId(null);
+        setReviewProductName('');
+        setReviewSuccess(true);
+        setTimeout(() => {
+          setReviewSuccess(false);
+        }, 3000);
+        return;
+      }
+
       const displayName = form.name || currentUser.displayName || '';
       const nameFallback = displayName || currentUser.email || 'Anonymous';
       await setDoc(
