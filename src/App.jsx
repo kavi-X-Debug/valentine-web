@@ -22,6 +22,23 @@ const Faq = lazy(() => import('./pages/Faq'));
 const Returns = lazy(() => import('./pages/Returns'));
 const Categories = lazy(() => import('./pages/Categories'));
 
+function TruckLoader() {
+  return (
+    <div className="truck-loading-screen">
+      <div className="loop-wrapper">
+        <div className="mountain" />
+        <div className="hill" />
+        <div className="tree" />
+        <div className="tree" />
+        <div className="tree" />
+        <div className="rock" />
+        <div className="truck" />
+        <div className="wheels" />
+      </div>
+    </div>
+  );
+}
+
 function PrivateRoute({ children }) {
   const { currentUser } = useAuth();
   return currentUser ? children : <Navigate to="/login" />;
@@ -42,7 +59,7 @@ function App() {
           <FloatingHearts />
           <Navbar />
           <main className="flex-grow">
-            <Suspense fallback={<div className="py-16 text-center text-gray-500">Loading...</div>}>
+            <Suspense fallback={<TruckLoader />}>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<Products />} />
