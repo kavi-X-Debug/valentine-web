@@ -24,7 +24,8 @@ export default function Admin() {
     price: '',
     image: '',
     description: '',
-    tags: ''
+    tags: '',
+    subImages: ''
   });
   const [productSubmitting, setProductSubmitting] = useState(false);
   const [productError, setProductError] = useState('');
@@ -41,7 +42,8 @@ export default function Admin() {
     price: '',
     image: '',
     description: '',
-    tags: ''
+    tags: '',
+    subImages: ''
   });
   const [editProductSubmitting, setEditProductSubmitting] = useState(false);
   const [editProductError, setEditProductError] = useState('');
@@ -275,6 +277,7 @@ export default function Admin() {
     const image = productForm.image.trim();
     const description = productForm.description.trim();
     const tagsRaw = productForm.tags.trim();
+    const subImagesRaw = productForm.subImages.trim();
     if (!name || !category || !priceRaw) {
       setProductError('Name, category and price are required.');
       setProductSuccess('');
@@ -293,6 +296,9 @@ export default function Admin() {
       const tags = tagsRaw
         ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean)
         : [];
+      const subImages = subImagesRaw
+        ? subImagesRaw.split(',').map(t => t.trim()).filter(Boolean)
+        : [];
       await addDoc(collection(db, 'products'), {
         name,
         category,
@@ -300,6 +306,7 @@ export default function Admin() {
         image,
         description,
         tags,
+        subImages,
         active: true,
         createdAt: serverTimestamp()
       });
@@ -309,7 +316,8 @@ export default function Admin() {
         price: '',
         image: '',
         description: '',
-        tags: ''
+        tags: '',
+        subImages: ''
       });
       setProductSuccess('Product has been added.');
     } catch (err) {
@@ -351,13 +359,15 @@ export default function Admin() {
     setEditProductError('');
     setEditProductSuccess('');
     const tagsValue = Array.isArray(prod.tags) ? prod.tags.join(', ') : String(prod.tags || '');
+    const subImagesValue = Array.isArray(prod.subImages) ? prod.subImages.join(', ') : String(prod.subImages || '');
     setEditProductForm({
       name: prod.name || '',
       category: prod.category || '',
       price: prod.price != null ? String(prod.price) : '',
       image: prod.image || '',
       description: prod.description || '',
-      tags: tagsValue
+      tags: tagsValue,
+      subImages: subImagesValue
     });
   }
 
@@ -369,7 +379,8 @@ export default function Admin() {
       price: '',
       image: '',
       description: '',
-      tags: ''
+      tags: '',
+      subImages: ''
     });
     setEditProductError('');
     setEditProductSuccess('');
@@ -384,6 +395,7 @@ export default function Admin() {
     const image = editProductForm.image.trim();
     const description = editProductForm.description.trim();
     const tagsRaw = editProductForm.tags.trim();
+    const subImagesRaw = editProductForm.subImages.trim();
     if (!name || !category || !priceRaw) {
       setEditProductError('Name, category and price are required.');
       setEditProductSuccess('');
@@ -402,6 +414,9 @@ export default function Admin() {
       const tags = tagsRaw
         ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean)
         : [];
+      const subImages = subImagesRaw
+        ? subImagesRaw.split(',').map(t => t.trim()).filter(Boolean)
+        : [];
       const ref = doc(db, 'products', editingProductId);
       await updateDoc(ref, {
         name,
@@ -409,7 +424,8 @@ export default function Admin() {
         price,
         image,
         description,
-        tags
+        tags,
+        subImages
       });
       setEditProductSuccess('Product has been updated.');
       setEditingProductId(null);
@@ -419,7 +435,8 @@ export default function Admin() {
         price: '',
         image: '',
         description: '',
-        tags: ''
+        tags: '',
+        subImages: ''
       });
     } catch (err) {
       console.error('Failed to update product', err);
@@ -889,6 +906,15 @@ export default function Admin() {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Additional image URLs (comma separated)</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  value={productForm.subImages}
+                  onChange={(e) => setProductForm(f => ({ ...f, subImages: e.target.value }))}
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <textarea
                   rows={3}
@@ -1062,6 +1088,15 @@ export default function Admin() {
                                 className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
                                 value={editProductForm.image}
                                 onChange={(e) => setEditProductForm(f => ({ ...f, image: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-medium text-gray-700 mb-1">Additional image URLs</label>
+                              <input
+                                type="text"
+                                className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                                value={editProductForm.subImages}
+                                onChange={(e) => setEditProductForm(f => ({ ...f, subImages: e.target.value }))}
                               />
                             </div>
                             <div>

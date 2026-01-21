@@ -20,6 +20,7 @@ export default function ProductDetails() {
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
   const [reviews, setReviews] = useState([]);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -33,7 +34,8 @@ export default function ProductDetails() {
       }
       if (found) {
         if (isMounted) {
-          setProduct(found);
+          const subImages = Array.isArray(found.subImages) ? found.subImages : [];
+          setProduct({ ...found, subImages });
           setProductLoading(false);
         }
         return;
@@ -59,7 +61,8 @@ export default function ProductDetails() {
             price: Number(data.price || 0),
             image: data.image || '',
             description: data.description || '',
-            tags: Array.isArray(data.tags) ? data.tags : []
+            tags: Array.isArray(data.tags) ? data.tags : [],
+            subImages: Array.isArray(data.subImages) ? data.subImages : []
           });
         } else {
           setProduct(null);
@@ -80,6 +83,10 @@ export default function ProductDetails() {
       isMounted = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [product]);
 
   const handleAddToCart = () => {
     if (!currentUser) {
@@ -114,6 +121,10 @@ export default function ProductDetails() {
     );
     return () => unsub();
   }, [product]);
+  const imageList = product
+    ? [product.image, ...(Array.isArray(product.subImages) ? product.subImages : [])].filter(Boolean)
+    : [];
+
   function downloadWishImage() {
     const size = 1080;
     const canvas = document.createElement('canvas');
@@ -194,6 +205,14 @@ export default function ProductDetails() {
     link.click();
   }
 
+  if (productLoading) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center">
+        <h2 className="text-2xl font-bold text-gray-800">Loading product...</h2>
+      </div>
+    );
+  }
+
   if (!product) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center">
@@ -216,7 +235,56 @@ export default function ProductDetails() {
           animate={{ opacity: 1, x: 0 }}
           className="rounded-2xl overflow-hidden shadow-lg border border-love-pink/20"
         >
-          <img src={product.image} alt={product.name} loading="lazy" className="w-full h-full object-cover object-top" />
+          {imageList.length > 0 && (
+            <div className="relative">
+              <img
+                src={imageList[activeImageIndex]}
+                alt={product.name}
+                loading="lazy"
+                className="w-full h-full object-cover object-top"
+              />
+              {imageList.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveImageIndex((prev) =>
+                        prev === 0 ? imageList.length - 1 : prev - 1
+                      )
+                    }
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 text-gray-700 hover:bg-white shadow"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveImageIndex((prev) =>
+                        prev === imageList.length - 1 ? 0 : prev + 1
+                      )
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 text-gray-700 hover:bg-white shadow"
+                  >
+                    ›
+                  </button>
+                  <div className="flex justify-center gap-2 mt-3 pb-3">
+                    {imageList.map((src, index) => (
+                      <button
+                        key={`${product.id}-thumb-${index}`}
+                        type="button"
+                        onClick={() => setActiveImageIndex(index)}
+                        className={`h-3 w-3 rounded-full border ${
+                          index === activeImageIndex
+                            ? 'bg-love-red border-love-red'
+                            : 'bg-white border-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </motion.div>
 
         {/* Product Info */}
