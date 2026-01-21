@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { db } from '../firebase/config';
-import { collection, onSnapshot, orderBy, query, updateDoc, doc, setDoc, increment } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query, updateDoc, doc, setDoc, increment, addDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { Search, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
+import { MOCK_PRODUCTS } from '../data/products';
 
 const STATUS_OPTIONS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -17,6 +18,20 @@ export default function Admin() {
   const [sort, setSort] = useState('created_desc');
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const [productForm, setProductForm] = useState({
+    name: '',
+    category: '',
+    price: '',
+    image: '',
+    description: '',
+    tags: ''
+  });
+  const [productSubmitting, setProductSubmitting] = useState(false);
+  const [productError, setProductError] = useState('');
+  const [productSuccess, setProductSuccess] = useState('');
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [deletingProductId, setDeletingProductId] = useState(null);
 
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -31,6 +46,29 @@ export default function Admin() {
         console.error('Failed to load orders', error);
         setOrders([]);
         setLoading(false);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  const productCategories = useMemo(() => {
+    const set = new Set();
+    MOCK_PRODUCTS.forEach(p => set.add(p.category));
+    return Array.from(set).sort();
+  }, []);
+
+  useEffect(() => {
+    const ref = collection(db, 'products');
+    const unsub = onSnapshot(
+      ref,
+      snapshot => {
+        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setProducts(list);
+        setProductsLoading(false);
+      },
+      () => {
+        setProducts([]);
+        setProductsLoading(false);
       }
     );
     return () => unsub();
@@ -170,6 +208,73 @@ export default function Admin() {
     };
   }, [orders]);
 
+  async function handleCreateProduct(e) {
+    e.preventDefault();
+    const name = productForm.name.trim();
+    const category = productForm.category.trim();
+    const priceRaw = productForm.price.trim();
+    const image = productForm.image.trim();
+    const description = productForm.description.trim();
+    const tagsRaw = productForm.tags.trim();
+    if (!name || !category || !priceRaw) {
+      setProductError('Name, category and price are required.');
+      setProductSuccess('');
+      return;
+    }
+    const price = Number(priceRaw);
+    if (!Number.isFinite(price) || price <= 0) {
+      setProductError('Enter a valid price greater than 0.');
+      setProductSuccess('');
+      return;
+    }
+    setProductSubmitting(true);
+    setProductError('');
+    setProductSuccess('');
+    try {
+      const tags = tagsRaw
+        ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean)
+        : [];
+      await addDoc(collection(db, 'products'), {
+        name,
+        category,
+        price,
+        image,
+        description,
+        tags,
+        active: true,
+        createdAt: serverTimestamp()
+      });
+      setProductForm({
+        name: '',
+        category: '',
+        price: '',
+        image: '',
+        description: '',
+        tags: ''
+      });
+      setProductSuccess('Product has been added.');
+    } catch (err) {
+      console.error('Failed to add product', err);
+      setProductError('Failed to add product. Please try again.');
+    } finally {
+      setProductSubmitting(false);
+    }
+  }
+
+  async function handleDeleteProduct(product) {
+    if (!product || !product.id) return;
+    const confirmed = window.confirm(`Remove product "${product.name}" from the system?`);
+    if (!confirmed) return;
+    setDeletingProductId(product.id);
+    try {
+      const ref = doc(db, 'products', product.id);
+      await deleteDoc(ref);
+    } catch {
+    } finally {
+      setDeletingProductId(null);
+    }
+  }
+
   async function handleStatusChange(order, nextStatus) {
     if (!order || !order.id || !nextStatus) return;
     const currentStatus = (order.status || 'pending').toLowerCase();
@@ -246,6 +351,17 @@ export default function Admin() {
             onClick={() => setTab('orders')}
           >
             Orders
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-1.5 rounded-full transition-all ${
+              tab === 'products'
+                ? 'bg-love-red text-white shadow-sm'
+                : 'text-gray-600 hover:text-love-red'
+            }`}
+            onClick={() => setTab('products')}
+          >
+            Products
           </button>
         </div>
       </div>
@@ -552,6 +668,138 @@ export default function Admin() {
             );
           })}
         </>
+      )}
+      {tab === 'products' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-xl shadow-sm border border-love-pink/20 p-6">
+            <h2 className="text-lg font-semibold text-love-dark mb-4">Add new product</h2>
+            {productError && (
+              <div className="mb-3 text-sm text-red-700 bg-red-100 px-3 py-2 rounded-lg">
+                {productError}
+              </div>
+            )}
+            {productSuccess && (
+              <div className="mb-3 text-sm text-green-700 bg-green-100 px-3 py-2 rounded-lg">
+                {productSuccess}
+              </div>
+            )}
+            <form onSubmit={handleCreateProduct} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  value={productForm.name}
+                  onChange={(e) => setProductForm(f => ({ ...f, name: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                    value={productForm.category}
+                    onChange={(e) => setProductForm(f => ({ ...f, category: e.target.value }))}
+                  >
+                    <option value="">Select category</option>
+                    {productCategories.map(cat => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (USD)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                    value={productForm.price}
+                    onChange={(e) => setProductForm(f => ({ ...f, price: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                <input
+                  type="url"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  value={productForm.image}
+                  onChange={(e) => setProductForm(f => ({ ...f, image: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  value={productForm.description}
+                  onChange={(e) => setProductForm(f => ({ ...f, description: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                  value={productForm.tags}
+                  onChange={(e) => setProductForm(f => ({ ...f, tags: e.target.value }))}
+                />
+              </div>
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={productSubmitting}
+                  className="px-4 py-2 rounded-lg bg-love-red text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {productSubmitting ? 'Saving...' : 'Add product'}
+                </button>
+              </div>
+            </form>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-love-pink/20 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-love-dark">Existing products</h2>
+              {productsLoading && (
+                <span className="text-xs text-gray-500">Loading...</span>
+              )}
+            </div>
+            {products.length === 0 && !productsLoading && (
+              <div className="text-sm text-gray-500">
+                No products stored in the system.
+              </div>
+            )}
+            {products.length > 0 && (
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1 text-sm">
+                {products.map(prod => (
+                  <div
+                    key={prod.id}
+                    className="flex items-center justify-between gap-3 border border-gray-100 rounded-lg px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium text-gray-800 truncate">
+                        {prod.name || 'Untitled'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {prod.category || 'No category'} • ${Number(prod.price || 0).toFixed(2)}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={deletingProductId === prod.id}
+                      onClick={() => handleDeleteProduct(prod)}
+                      className="text-xs px-3 py-1 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {deletingProductId === prod.id ? 'Removing...' : 'Remove'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

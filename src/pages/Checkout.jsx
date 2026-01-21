@@ -144,13 +144,34 @@ export default function Checkout() {
         console.error('Failed to update revenue stats after order creation', err);
       }
 
-      // Send Email Notification
+      // Send Email Notification (Invoice)
       try {
+        const itemsLines = cartItems.map((item) => {
+          const lineTotal = Number((item.price || 0) * (item.quantity || 1)).toFixed(2);
+          return `- ${item.name} x${item.quantity || 1} - $${lineTotal}`;
+        }).join('\n');
+
+        const invoiceMessage = `Invoice for your order ${docRef.id}
+
+Items:
+${itemsLines || 'No items.'}
+
+Subtotal: $${cartTotal.toFixed(2)}
+Shipping: Free
+Total: $${cartTotal.toFixed(2)}
+
+Shipping to:
+${formData.firstName} ${formData.lastName}
+${formData.address}
+${formData.city}, ${formData.country}
+
+Thank you for your order!`;
+
         const emailParams = {
           order_id: docRef.id,
           to_name: `${formData.firstName} ${formData.lastName}`,
           to_email: formData.email,
-          message: `Thank you for your order! Your total is $${cartTotal.toFixed(2)}. We will ship your romantic gifts to ${formData.address}, ${formData.city}.`,
+          message: invoiceMessage,
           reply_to: 'support@lovecraft.com',
         };
 
