@@ -48,6 +48,16 @@ export default function Admin() {
   const [editProductSubmitting, setEditProductSubmitting] = useState(false);
   const [editProductError, setEditProductError] = useState('');
   const [editProductSuccess, setEditProductSuccess] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoryName, setCategoryName] = useState('');
+  const [categorySubmitting, setCategorySubmitting] = useState(false);
+  const [categoryError, setCategoryError] = useState('');
+  const [categorySuccess, setCategorySuccess] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [replySubmittingId, setReplySubmittingId] = useState(null);
 
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
@@ -75,8 +85,13 @@ export default function Admin() {
         set.add(p.category);
       }
     });
+    categories.forEach(cat => {
+      if (cat && cat.name) {
+        set.add(cat.name);
+      }
+    });
     return Array.from(set).sort();
-  }, [products]);
+  }, [products, categories]);
 
   useEffect(() => {
     const ref = collection(db, 'products');
@@ -90,6 +105,42 @@ export default function Admin() {
       () => {
         setProducts([]);
         setProductsLoading(false);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const ref = collection(db, 'categories');
+    const q = query(ref, orderBy('name'));
+    const unsub = onSnapshot(
+      q,
+      snapshot => {
+        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setCategories(list);
+        setCategoriesLoading(false);
+      },
+      () => {
+        setCategories([]);
+        setCategoriesLoading(false);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const ref = collection(db, 'productMessages');
+    const q = query(ref, orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(
+      q,
+      snapshot => {
+        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setMessages(list);
+        setMessagesLoading(false);
+      },
+      () => {
+        setMessages([]);
+        setMessagesLoading(false);
       }
     );
     return () => unsub();
@@ -268,6 +319,27 @@ export default function Admin() {
       statusData
     };
   }, [orders]);
+
+  async function handleReply(message) {
+    if (!message || !message.id) return;
+    const textRaw = replyDrafts[message.id] || '';
+    const text = textRaw.trim();
+    if (!text) return;
+    setReplySubmittingId(message.id);
+    try {
+      const ref = doc(db, 'productMessages', message.id);
+      await updateDoc(ref, {
+        answer: text,
+        status: 'answered',
+        answeredAt: serverTimestamp()
+      });
+      setReplyDrafts(prev => ({ ...prev, [message.id]: '' }));
+    } catch (err) {
+      console.error('Failed to send reply', err);
+    } finally {
+      setReplySubmittingId(null);
+    }
+  }
 
   async function handleCreateProduct(e) {
     e.preventDefault();
@@ -537,6 +609,17 @@ export default function Admin() {
             onClick={() => setTab('products')}
           >
             Products
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-1.5 rounded-full transition-all ${
+              tab === 'inbox'
+                ? 'bg-love-red text-white shadow-sm'
+                : 'text-gray-600 hover:text-love-red'
+            }`}
+            onClick={() => setTab('inbox')}
+          >
+            Inbox
           </button>
         </div>
       </div>
@@ -1143,6 +1226,135 @@ export default function Admin() {
               </div>
             )}
           </div>
+        </div>
+      )}
+      {tab === 'inbox' && (
+        <div className="bg-white rounded-xl shadow-sm border border-love-pink/20 p-6">
+          <div className="flex items-center justify-between mb-4 gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-love-dark">Customer questions</h2>
+              <p className="text-xs text-gray-500">
+                View questions asked on product pages and send replies.
+              </p>
+            </div>
+            {messagesLoading && (
+              <span className="text-xs text-gray-500 flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Loading...
+              </span>
+            )}
+          </div>
+          {messages.length === 0 && !messagesLoading && (
+            <div className="text-sm text-gray-500">
+              There are no customer questions yet.
+            </div>
+          )}
+          {messages.length > 0 && (
+            <div className="space-y-4 max-h-[32rem] overflow-y-auto pr-1 text-sm">
+              {messages.map(message => {
+                const createdAt = message.createdAt && message.createdAt.toDate
+                  ? message.createdAt.toDate().toLocaleString()
+                  : '';
+                const answeredAt = message.answeredAt && message.answeredAt.toDate
+                  ? message.answeredAt.toDate().toLocaleString()
+                  : '';
+                const hasAnswer = message.answer && String(message.answer).trim();
+                const draftValue = replyDrafts[message.id] || '';
+                return (
+                  <div
+                    key={message.id}
+                    className="border border-gray-100 rounded-lg px-3 py-3 bg-white"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-gray-700 mb-1">
+                          {message.productName || 'Product question'}
+                        </div>
+                        <div className="text-[11px] text-gray-500">
+                          Product ID: {message.productId || 'unknown'}
+                        </div>
+                        <div className="text-[11px] text-gray-500">
+                          From: {message.userEmail || 'No email provided'}
+                        </div>
+                        {createdAt && (
+                          <div className="text-[11px] text-gray-400">
+                            Asked at {createdAt}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs">
+                        <span
+                          className={
+                            'inline-flex items-center px-2 py-0.5 rounded-full font-medium ' +
+                            (hasAnswer
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800')
+                          }
+                        >
+                          {hasAnswer ? 'Answered' : 'Waiting reply'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-gray-800">
+                      <div className="text-xs font-semibold text-gray-600 mb-0.5">
+                        Question
+                      </div>
+                      <div className="text-sm">
+                        {message.question}
+                      </div>
+                    </div>
+                    {hasAnswer && (
+                      <div className="mt-3">
+                        <div className="text-xs font-semibold text-gray-600 mb-0.5">
+                          Your reply
+                        </div>
+                        <div className="text-sm bg-love-light/40 border border-love-pink/30 rounded-lg p-2 text-gray-800">
+                          {message.answer}
+                        </div>
+                        {answeredAt && (
+                          <div className="text-[11px] text-gray-400 mt-1">
+                            Replied at {answeredAt}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {!hasAnswer && (
+                      <div className="mt-3">
+                        <div className="text-xs font-semibold text-gray-600 mb-1">
+                          Reply to customer
+                        </div>
+                        <textarea
+                          rows={2}
+                          className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                          value={draftValue}
+                          onChange={(e) =>
+                            setReplyDrafts(prev => ({
+                              ...prev,
+                              [message.id]: e.target.value
+                            }))
+                          }
+                          placeholder="Write a helpful reply..."
+                        />
+                        <div className="flex justify-end mt-2">
+                          <button
+                            type="button"
+                            disabled={
+                              replySubmittingId === message.id ||
+                              !draftValue.trim()
+                            }
+                            onClick={() => handleReply(message)}
+                            className="px-3 py-1.5 rounded-lg bg-love-red text-white text-xs font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            {replySubmittingId === message.id ? 'Sending...' : 'Send reply'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

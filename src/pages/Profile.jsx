@@ -8,7 +8,7 @@ import { MOCK_PRODUCTS } from '../data/products';
 
 
 export default function Profile() {
-  const { currentUser } = useAuth();
+  const { currentUser, resetPassword } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
@@ -37,6 +37,9 @@ export default function Profile() {
   const [reviewText, setReviewText] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [passwordResetMessage, setPasswordResetMessage] = useState('');
+  const [passwordResetError, setPasswordResetError] = useState('');
+  const [passwordResetLoading, setPasswordResetLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -292,6 +295,32 @@ export default function Profile() {
     }
   }
 
+  async function handleProfilePasswordReset() {
+    if (!currentUser || !currentUser.email) {
+      setPasswordResetError('No email is associated with this account.');
+      setPasswordResetMessage('');
+      return;
+    }
+    try {
+      setPasswordResetError('');
+      setPasswordResetMessage('');
+      setPasswordResetLoading(true);
+      await resetPassword(currentUser.email);
+      setPasswordResetMessage('A password reset link has been sent to your email.');
+    } catch (e) {
+      const code = e && e.code ? String(e.code) : '';
+      if (code === 'auth/invalid-email') {
+        setPasswordResetError('Your email address seems invalid. Please contact support.');
+      } else if (code === 'auth/user-not-found') {
+        setPasswordResetError('No account found for this email. Please contact support.');
+      } else {
+        setPasswordResetError('Failed to send reset link. Please try again later.');
+      }
+    } finally {
+      setPasswordResetLoading(false);
+    }
+  }
+
   if (!currentUser) return null;
 
   return (
@@ -530,6 +559,32 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
+              </div>
+              <div className="pt-6 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xl font-semibold text-love-dark">Security</h2>
+                </div>
+                {passwordResetError && (
+                  <div className="mb-2 text-xs text-red-700 bg-red-100 px-3 py-2 rounded-lg">
+                    {passwordResetError}
+                  </div>
+                )}
+                {passwordResetMessage && (
+                  <div className="mb-2 text-xs text-green-700 bg-green-100 px-3 py-2 rounded-lg">
+                    {passwordResetMessage}
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mb-3">
+                  We will email a secure link to reset your password for {currentUser.email}.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleProfilePasswordReset}
+                  disabled={passwordResetLoading}
+                  className="inline-flex items-center px-4 py-2 rounded-lg border border-love-red text-love-red text-xs font-medium hover:bg-love-red hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {passwordResetLoading ? 'Sending reset link...' : 'Send password reset email'}
+                </button>
               </div>
               {editing && (
                 <motion.button
