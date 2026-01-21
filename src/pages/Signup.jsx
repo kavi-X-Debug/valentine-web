@@ -11,7 +11,7 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState('');
-  const { signup, loginWithGoogle, sendWelcomeEmail } = useAuth();
+  const { signup, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
@@ -28,12 +28,7 @@ export default function Signup() {
       setLoading(true);
       const cred = await signup(cleanedEmail, password, { displayName: name });
       if (cred && cred.user) {
-        try {
-          await sendWelcomeEmail(cred.user);
-          setInfo('We have sent a welcome email. Please check your inbox.');
-        } catch (err) {
-          console.error('Welcome email after signup failed:', err);
-        }
+        setInfo('We have sent a welcome email. Please check your inbox.');
       }
       navigate('/profile');
     } catch (error) {
@@ -59,12 +54,7 @@ export default function Signup() {
       setLoading(true);
       const cred = await loginWithGoogle();
       if (cred && cred.user) {
-        try {
-          await sendWelcomeEmail(cred.user);
-          setInfo('We have sent a welcome email. Please check your inbox.');
-        } catch (err) {
-          console.error('Welcome email after Google signup failed:', err);
-        }
+        setInfo('We have sent a welcome email. Please check your inbox.');
       }
       navigate('/profile');
     } catch (error) {
