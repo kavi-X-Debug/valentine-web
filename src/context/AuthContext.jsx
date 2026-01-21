@@ -24,6 +24,70 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  function sendWelcomeEmail(user) {
+    console.log('sendWelcomeEmail called with user:', user);
+    if (!user || !user.email) {
+      console.log('sendWelcomeEmail: no user or email, skipping');
+      return Promise.resolve();
+    }
+
+    const name =
+      user.displayName ||
+      (user.email ? user.email.split('@')[0] : '') ||
+      'there';
+
+    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+    const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+    const publicKey = 'GNdiN4DMl_vTXQ7iE';
+
+    console.log('sendWelcomeEmail config:', {
+      serviceId,
+      templateId,
+      hasPublicKey: !!publicKey
+    });
+
+    if (!serviceId || !templateId || !publicKey) {
+      console.log('sendWelcomeEmail: missing EmailJS config, not sending');
+      return Promise.resolve();
+    }
+
+    const messageBody = `Hi ${name},
+
+Welcome to LoveCraft – we’re so happy you’re here! 💖
+
+Your account has been created successfully, which means you’re now ready to:
+- Discover romantic gifts in our Valentine collections
+- Save your favorite items to your wishlist
+- Track your orders and delivery updates in one place
+
+Whenever you’re ready to surprise someone special, just log in and we’ll help you pick
+the perfect colors and gifts for your moment.
+
+With warm colors and kind wishes,
+LoveCraft Team`;
+
+    const emailParams = {
+      order_id: 'WELCOME',
+      to_name: name,
+      to_email: user.email,
+      message: messageBody,
+      reply_to: 'support@lovecraft.com'
+    };
+
+    console.log('sendWelcomeEmail params:', emailParams);
+
+    return emailjs
+      .send(serviceId, templateId, emailParams, publicKey)
+      .then(result => {
+        console.log('sendWelcomeEmail success:', result.status, result.text);
+        return result;
+      })
+      .catch(error => {
+        console.error('sendWelcomeEmail failed:', error);
+        throw error;
+      });
+  }
+
   async function ensureUserDoc(user, extra = {}) {
     if (!user) return;
     const userRef = doc(db, 'users', user.uid);
@@ -38,6 +102,11 @@ export function AuthProvider({ children }) {
         lastLoginAt: serverTimestamp(),
         ...extra
       });
+      try {
+        await sendWelcomeEmail(user);
+      } catch (err) {
+        console.error('Failed to send welcome email', err);
+      }
     } else {
       await updateDoc(userRef, {
         email: user.email || null,
@@ -85,47 +154,6 @@ export function AuthProvider({ children }) {
 
   function getSignInMethods(email) {
     return fetchSignInMethodsForEmail(auth, email);
-  }
-
-  function sendWelcomeEmail(user) {
-    if (!user || !user.email) return Promise.resolve();
-    const name =
-      user.displayName ||
-      (user.email ? user.email.split('@')[0] : '') ||
-      'there';
-
-    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-    const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-    const publicKey = 'GNdiN4DMl_vTXQ7iE';
-
-    if (!serviceId || !templateId || !publicKey) {
-      return Promise.resolve();
-    }
-
-    const messageBody = `Hi ${name},
-
-Welcome to LoveCraft – we’re so happy you’re here! 💖
-
-Your account has been created successfully, which means you’re now ready to:
-- Discover romantic gifts in our Valentine collections
-- Save your favorite items to your wishlist
-- Track your orders and delivery updates in one place
-
-Whenever you’re ready to surprise someone special, just log in and we’ll help you pick
-the perfect colors and gifts for your moment.
-
-With warm colors and kind wishes,
-LoveCraft Team`;
-
-    const emailParams = {
-      order_id: 'WELCOME',
-      to_name: name,
-      to_email: user.email,
-      message: messageBody,
-      reply_to: 'support@lovecraft.com'
-    };
-
-    return emailjs.send(serviceId, templateId, emailParams, publicKey);
   }
 
   async function changeEmail(newEmail, currentPassword) {

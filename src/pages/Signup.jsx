@@ -31,7 +31,9 @@ export default function Signup() {
         try {
           await sendWelcomeEmail(cred.user);
           setInfo('We have sent a welcome email. Please check your inbox.');
-        } catch {}
+        } catch (err) {
+          console.error('Welcome email after signup failed:', err);
+        }
       }
       navigate('/profile');
     } catch (error) {
@@ -60,7 +62,9 @@ export default function Signup() {
         try {
           await sendWelcomeEmail(cred.user);
           setInfo('We have sent a welcome email. Please check your inbox.');
-        } catch {}
+        } catch (err) {
+          console.error('Welcome email after Google signup failed:', err);
+        }
       }
       navigate('/profile');
     } catch (error) {
