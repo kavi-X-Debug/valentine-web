@@ -332,7 +332,8 @@ export default function Admin() {
       await updateDoc(ref, {
         answer: text,
         status: 'answered',
-        answeredAt: serverTimestamp()
+        answeredAt: serverTimestamp(),
+        userHasRead: false
       });
       setReplyDrafts(prev => ({ ...prev, [message.id]: '' }));
     } catch (err) {

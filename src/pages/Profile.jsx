@@ -40,8 +40,6 @@ export default function Profile() {
   const [passwordResetMessage, setPasswordResetMessage] = useState('');
   const [passwordResetError, setPasswordResetError] = useState('');
   const [passwordResetLoading, setPasswordResetLoading] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [messagesLoading, setMessagesLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
@@ -110,45 +108,6 @@ export default function Profile() {
         console.error('Orders subscription error:', error);
         setOrders([]);
         setOrdersLoading(false);
-      }
-    );
-    return () => unsub();
-  }, [currentUser]);
-
-  useEffect(() => {
-    if (!currentUser) {
-      setMessages([]);
-      setMessagesLoading(false);
-      return;
-    }
-    const userId = currentUser.uid;
-    if (!userId) {
-      setMessages([]);
-      setMessagesLoading(false);
-      return;
-    }
-    setMessagesLoading(true);
-    const q = query(
-      collection(db, 'productMessages'),
-      where('userId', '==', userId)
-    );
-    const unsub = onSnapshot(
-      q,
-      snapshot => {
-        const list = snapshot.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .sort((a, b) => {
-            const ta = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
-            const tb = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
-            return tb - ta;
-          });
-        setMessages(list);
-        setMessagesLoading(false);
-      },
-      (error) => {
-        console.error('Product messages subscription error:', error);
-        setMessages([]);
-        setMessagesLoading(false);
       }
     );
     return () => unsub();
@@ -638,78 +597,6 @@ export default function Profile() {
                 </motion.button>
               )}
             </form>
-          )}
-        </motion.div>
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <motion.div
-          layout
-          className="bg-white p-8 rounded-2xl shadow-lg border border-love-pink/20 mt-8"
-        >
-          <h2 className="text-2xl font-semibold text-love-dark mb-4">Inbox</h2>
-          {messagesLoading ? (
-            <div className="text-gray-600 text-sm">Loading your messages...</div>
-          ) : messages.length === 0 ? (
-            <div className="text-gray-600 text-sm">
-              You have no messages yet. Ask questions on product pages to see replies here.
-            </div>
-          ) : (
-            <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
-              {messages.map((m) => {
-                const createdAt = m.createdAt && m.createdAt.toDate
-                  ? m.createdAt.toDate().toLocaleString()
-                  : '';
-                const answeredAt = m.answeredAt && m.answeredAt.toDate
-                  ? m.answeredAt.toDate().toLocaleString()
-                  : '';
-                const hasAnswer = m.answer && String(m.answer).trim();
-                return (
-                  <div
-                    key={m.id}
-                    className="border border-gray-100 rounded-2xl p-4 bg-gray-50"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-sm font-semibold text-gray-800">
-                        {m.productName || 'Product question'}
-                      </div>
-                      <div className="text-[11px] text-gray-400">
-                        {createdAt}
-                      </div>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-end">
-                        <div className="max-w-[80%] rounded-2xl px-3 py-2 bg-love-red text-white text-xs sm:text-sm">
-                          {m.question}
-                        </div>
-                      </div>
-                      {hasAnswer && (
-                        <div className="flex justify-start">
-                          <div className="max-w-[80%] rounded-2xl px-3 py-2 bg-white border border-love-pink/40 text-xs sm:text-sm text-gray-800">
-                            {m.answer}
-                            {answeredAt && (
-                              <div className="mt-1 text-[10px] text-gray-400">
-                                Replied at {answeredAt}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      {!hasAnswer && (
-                        <div className="flex justify-start">
-                          <div className="text-[11px] text-gray-500">
-                            Waiting for reply from the store
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           )}
         </motion.div>
       </motion.div>

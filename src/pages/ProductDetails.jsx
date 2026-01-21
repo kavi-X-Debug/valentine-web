@@ -180,7 +180,8 @@ export default function ProductDetails() {
         answer: '',
         status: 'open',
         createdAt: serverTimestamp(),
-        answeredAt: null
+        answeredAt: null,
+        userHasRead: true
       });
       setQuestionText('');
       setQuestionSuccess('Your question has been sent.');

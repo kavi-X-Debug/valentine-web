@@ -79,15 +79,21 @@ export default function Navbar() {
     }
     const q = query(
       collection(db, 'productMessages'),
-      where('userId', '==', userId),
-      where('status', '==', 'answered')
+      where('userId', '==', userId)
     );
     const unsub = onSnapshot(
       q,
       snapshot => {
-        setInboxCount(snapshot.size || 0);
+        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const unread = list.filter(m => {
+          const hasAnswer = m.answer && String(m.answer).trim();
+          const userHasRead = m.userHasRead === true;
+          return hasAnswer && !userHasRead;
+        });
+        setInboxCount(unread.length);
       },
-      () => {
+      (error) => {
+        console.error('Navbar inbox subscription error:', error);
         setInboxCount(0);
       }
     );

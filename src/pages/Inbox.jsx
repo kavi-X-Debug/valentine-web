@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
@@ -25,15 +25,31 @@ export default function Inbox() {
     setLoading(true);
     const q = query(
       collection(db, 'productMessages'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', userId)
     );
     const unsub = onSnapshot(
       q,
       snapshot => {
-        const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const list = snapshot.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const ta = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
+            const tb = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
+            return tb - ta;
+          });
         setMessages(list);
         setLoading(false);
+        const unseenWithAnswer = list.filter(m => {
+          const hasAnswer = m.answer && String(m.answer).trim();
+          const userHasRead = m.userHasRead === true;
+          return hasAnswer && !userHasRead;
+        });
+        if (unseenWithAnswer.length > 0) {
+          unseenWithAnswer.forEach(m => {
+            const ref = doc(db, 'productMessages', m.id);
+            updateDoc(ref, { userHasRead: true }).catch(() => {});
+          });
+        }
       },
       () => {
         setMessages([]);
@@ -186,4 +202,3 @@ export default function Inbox() {
     </div>
   );
 }
-
