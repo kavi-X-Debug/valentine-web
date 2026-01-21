@@ -2,22 +2,22 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, Heart, ArrowRight } from 'lucide-react';
-import Confetti from 'react-confetti';
-import { useWindowSize } from 'react-use';
+import Lottie from 'lottie-react';
+import confettiAnimation from '../../Confetti.json';
 
 export default function OrderSuccess() {
-  const { width, height } = useWindowSize();
-
   return (
-    <div className="min-h-[80vh] flex items-center justify-center bg-love-light/30 px-4">
-      <Confetti
-        width={width}
-        height={height}
-        recycle={false}
-        numberOfPieces={200}
-        colors={['#e11d48', '#fb7185', '#ffe4e6', '#ffffff']}
+    <div className="min-h-[80vh] flex items-center justify-center bg-love-light/30 px-4 relative overflow-hidden">
+      <Lottie
+        animationData={confettiAnimation}
+        loop={false}
+        autoplay
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none'
+        }}
       />
-      
       <motion.div 
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

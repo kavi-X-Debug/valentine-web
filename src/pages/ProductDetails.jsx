@@ -182,9 +182,12 @@ export default function ProductDetails() {
             <p className="text-3xl font-bold text-gray-900">${product.price.toFixed(2)}</p>
           </div>
 
-          <p className="text-gray-600 leading-relaxed">
-            {product.description || "Celebrate your love with this handcrafted treasure. Perfect for anniversaries, Valentine's Day, or just because."}
-          </p>
+          <div className="mt-2 p-4 rounded-xl bg-love-light/40 border border-love-pink/30">
+            <div className="text-sm font-semibold text-gray-800 mb-1">About this item</div>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              {product.description || "Celebrate your love with this handcrafted treasure. Perfect for anniversaries, Valentine's Day, or just because."}
+            </p>
+          </div>
 
           <div className="space-y-4 pt-4 border-t border-gray-100">
             <div>
@@ -244,6 +247,43 @@ export default function ProductDetails() {
              <div className="flex items-center"><Check className="h-4 w-4 mr-1 text-green-500" /> In Stock</div>
              <div className="flex items-center"><Check className="h-4 w-4 mr-1 text-green-500" /> Free Shipping</div>
           </div>
+
+          <div className="mt-6 border-t border-gray-200 pt-5">
+            <h2 className="text-lg font-semibold text-love-dark mb-3">Customer reviews</h2>
+            {reviews.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                There are no reviews for this item yet. Customers can share a review after their order is completed.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {reviews.map(review => {
+                  const createdAt = review.createdAt && review.createdAt.toDate
+                    ? review.createdAt.toDate().toLocaleDateString()
+                    : '';
+                  return (
+                    <div
+                      key={review.id}
+                      className="bg-white border border-love-pink/20 rounded-xl p-3 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="text-sm font-semibold text-gray-800">
+                          {review.userName || 'Someone'}
+                        </div>
+                        {createdAt && (
+                          <div className="text-xs text-gray-400">
+                            {createdAt}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700">
+                        {review.message}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </motion.div>
       </div>
 
@@ -275,38 +315,6 @@ export default function ProductDetails() {
                 Confirm
               </button>
             </div>
-          </div>
-        </div>
-      )}
-      {reviews.length > 0 && (
-        <div className="mt-10 max-w-3xl mx-auto">
-          <h2 className="text-2xl font-semibold text-love-dark mb-4">What people say</h2>
-          <div className="space-y-4">
-            {reviews.map(review => {
-              const createdAt = review.createdAt && review.createdAt.toDate
-                ? review.createdAt.toDate().toLocaleDateString()
-                : '';
-              return (
-                <div
-                  key={review.id}
-                  className="bg-white border border-love-pink/20 rounded-xl p-4 shadow-sm"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="text-sm font-semibold text-gray-800">
-                      {review.userName || 'Someone'}
-                    </div>
-                    {createdAt && (
-                      <div className="text-xs text-gray-400">
-                        {createdAt}
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-700">
-                    {review.message}
-                  </p>
-                </div>
-              );
-            })}
           </div>
         </div>
       )}
