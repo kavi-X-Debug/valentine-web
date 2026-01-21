@@ -55,7 +55,13 @@ export default function Signup() {
     try {
       setError('');
       setLoading(true);
-      await loginWithGoogle();
+      const cred = await loginWithGoogle();
+      if (cred && cred.user) {
+        try {
+          await sendWelcomeEmail(cred.user);
+          setInfo('We have sent a welcome email. Please check your inbox.');
+        } catch {}
+      }
       navigate('/profile');
     } catch (error) {
       console.error("Google login error:", error);
