@@ -61,6 +61,7 @@ export default function Admin() {
   const [replyDrafts, setReplyDrafts] = useState({});
   const [replySubmittingId, setReplySubmittingId] = useState(null);
   const [inboxShowUnread, setInboxShowUnread] = useState(true);
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [outOfStockSendingId, setOutOfStockSendingId] = useState(null);
   const [outOfStockNotice, setOutOfStockNotice] = useState(null);
 
@@ -154,6 +155,27 @@ export default function Admin() {
     );
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    const filtered = messages.filter(message => {
+      const isAnswered = message.status === 'answered';
+      return inboxShowUnread ? !isAnswered : isAnswered;
+    });
+    if (filtered.length === 0) {
+      if (selectedMessageId !== null) {
+        setSelectedMessageId(null);
+      }
+      return;
+    }
+    if (selectedMessageId === null) {
+      setSelectedMessageId(filtered[0].id);
+      return;
+    }
+    const exists = filtered.some(m => m.id === selectedMessageId);
+    if (!exists) {
+      setSelectedMessageId(filtered[0].id);
+    }
+  }, [messages, inboxShowUnread, selectedMessageId]);
 
   const combinedProducts = useMemo(() => {
     const staticList = MOCK_PRODUCTS.map(p => ({
@@ -685,6 +707,15 @@ LoveCraft support team`;
       return '—';
     }
   }
+
+  const filteredMessages = messages.filter(message => {
+    const isAnswered = message.status === 'answered';
+    return inboxShowUnread ? !isAnswered : isAnswered;
+  });
+
+  const selectedMessage = selectedMessageId
+    ? filteredMessages.find(m => m.id === selectedMessageId) || null
+    : null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -1492,97 +1523,221 @@ LoveCraft support team`;
             </div>
           )}
           {messages.length > 0 && (
-            <div className="space-y-4 max-h-[32rem] overflow-y-auto pr-1 text-sm">
-              {messages
-                .filter(message => {
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.7fr)] gap-4 text-sm">
+              <div className="max-h-[32rem] overflow-y-auto pr-1 border border-love-pink/30 rounded-2xl bg-white/70">
+                {filteredMessages.length === 0 && (
+                  <div className="px-4 py-6 text-xs text-gray-500">
+                    No {inboxShowUnread ? 'unread' : 'answered'} questions.
+                  </div>
+                )}
+                {filteredMessages.map(message => {
+                  const createdAt = message.createdAt && message.createdAt.toDate
+                    ? message.createdAt.toDate().toLocaleString()
+                    : '';
                   const isAnswered = message.status === 'answered';
-                  return inboxShowUnread ? !isAnswered : isAnswered;
-                })
-                .map(message => {
-                const createdAt = message.createdAt && message.createdAt.toDate
-                  ? message.createdAt.toDate().toLocaleString()
-                  : '';
-                const answeredAt = message.answeredAt && message.answeredAt.toDate
-                  ? message.answeredAt.toDate().toLocaleString()
-                  : '';
-                const hasAnswer = message.answer && String(message.answer).trim();
-                const isAnswered = message.status === 'answered';
-                const draftValue = replyDrafts[message.id] || '';
-                return (
-                  <div
-                    key={message.id}
-                    className="border border-gray-100 rounded-lg px-3 py-3 bg-white"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold text-gray-700 mb-1">
-                          {message.productName || 'Product question'}
+                  let thread = [];
+                  if (Array.isArray(message.thread) && message.thread.length > 0) {
+                    thread = [...message.thread];
+                  } else {
+                    if (message.question) {
+                      thread.push({
+                        from: 'user',
+                        text: message.question,
+                        createdAt: 0
+                      });
+                    }
+                    if (message.answer) {
+                      thread.push({
+                        from: 'admin',
+                        text: message.answer,
+                        createdAt: 1
+                      });
+                    }
+                  }
+                  thread.sort((a, b) => {
+                    const ta = typeof a.createdAt === 'number' ? a.createdAt : 0;
+                    const tb = typeof b.createdAt === 'number' ? b.createdAt : 0;
+                    return ta - tb;
+                  });
+                  const last = thread.length > 0 ? thread[thread.length - 1] : null;
+                  const lastText = last ? last.text : '';
+                  const lastFromUser = last ? last.from === 'user' : false;
+                  const isActive = selectedMessage && selectedMessage.id === message.id;
+                  return (
+                    <button
+                      key={message.id}
+                      type="button"
+                      onClick={() => setSelectedMessageId(message.id)}
+                      className={
+                        'w-full flex items-start gap-3 px-3 py-3 text-left transition-colors border-b border-love-pink/10 last:border-b-0 ' +
+                        (isActive ? 'bg-love-light/60' : 'hover:bg-love-light/40')
+                      }
+                    >
+                      <div className="mt-1 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold bg-love-red text-white">
+                        Q
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <div className="text-sm font-semibold text-love-dark truncate">
+                            {message.productName || 'Product question'}
+                          </div>
+                          {createdAt && (
+                            <div className="text-[10px] text-gray-400 whitespace-nowrap">
+                              {createdAt}
+                            </div>
+                          )}
                         </div>
-                        <div className="text-[11px] text-gray-500">
-                          Product ID: {message.productId || 'unknown'}
-                        </div>
-                        <div className="text-[11px] text-gray-500">
+                        <div className="text-[11px] text-gray-500 truncate">
                           From: {message.userEmail || 'No email provided'}
                         </div>
-                        {createdAt && (
-                          <div className="text-[11px] text-gray-400">
-                            Asked at {createdAt}
+                        <div className="flex items-center justify-between gap-2 mt-1">
+                          <div className="text-xs text-gray-600 truncate">
+                            {lastText
+                              ? `${lastFromUser ? 'Customer: ' : 'You: '} ${lastText}`
+                              : 'No messages yet'}
                           </div>
-                        )}
+                          <div className="shrink-0">
+                            <span
+                              className={
+                                'text-[10px] px-2 py-0.5 rounded-full border ' +
+                                (isAnswered
+                                  ? 'bg-green-50 text-green-700 border-green-100'
+                                  : 'bg-yellow-50 text-yellow-700 border-yellow-100')
+                              }
+                            >
+                              {isAnswered ? 'Answered' : 'Waiting'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs">
-                        <span
-                          className={
-                            'inline-flex items-center px-2 py-0.5 rounded-full font-medium ' +
-                            (isAnswered
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800')
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="max-h-[32rem] rounded-2xl bg-white/80 border border-love-pink/30 flex flex-col">
+                {!selectedMessage && (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center px-4 py-6 text-sm text-gray-500">
+                    <div className="mb-2 text-lg font-semibold text-love-dark">
+                      Select a question to view conversation
+                    </div>
+                    <div>
+                      Choose a question on the left to see the full thread and reply.
+                    </div>
+                  </div>
+                )}
+                {selectedMessage && (() => {
+                  const message = selectedMessage;
+                  const createdAt = message.createdAt && message.createdAt.toDate
+                    ? message.createdAt.toDate().toLocaleString()
+                    : '';
+                  const answeredAt = message.answeredAt && message.answeredAt.toDate
+                    ? message.answeredAt.toDate().toLocaleString()
+                    : '';
+                  const hasAnswer = message.answer && String(message.answer).trim();
+                  const isAnswered = message.status === 'answered';
+                  let thread = [];
+                  if (Array.isArray(message.thread) && message.thread.length > 0) {
+                    thread = [...message.thread];
+                  } else {
+                    if (message.question) {
+                      thread.push({
+                        from: 'user',
+                        text: message.question,
+                        createdAt: 0
+                      });
+                    }
+                    if (message.answer) {
+                      thread.push({
+                        from: 'admin',
+                        text: message.answer,
+                        createdAt: 1
+                      });
+                    }
+                  }
+                  thread.sort((a, b) => {
+                    const ta = typeof a.createdAt === 'number' ? a.createdAt : 0;
+                    const tb = typeof b.createdAt === 'number' ? b.createdAt : 0;
+                    return ta - tb;
+                  });
+                  const draftValue = replyDrafts[message.id] || '';
+                  return (
+                    <>
+                      <div className="px-4 py-3 border-b border-love-pink/20 flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-love-dark truncate">
+                            {message.productName || 'Product question'}
+                          </div>
+                          <div className="text-[11px] text-gray-500 truncate">
+                            {message.userEmail || 'No email provided'}
+                          </div>
+                          {createdAt && (
+                            <div className="text-[11px] text-gray-400">
+                              Asked at {createdAt}
+                            </div>
+                          )}
+                        </div>
+                        <div className="shrink-0">
+                          <span
+                            className={
+                              'text-[10px] px-2 py-0.5 rounded-full border ' +
+                              (isAnswered
+                                ? 'bg-green-50 text-green-700 border-green-100'
+                                : 'bg-yellow-50 text-yellow-700 border-yellow-100')
+                            }
+                          >
+                            {isAnswered ? 'Answered' : 'Waiting reply'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm">
+                        {thread.map((msg, index) => {
+                          const fromUser = msg.from === 'user';
+                          const key = `${message.id}-${index}`;
+                          if (fromUser) {
+                            return (
+                              <div key={key} className="flex justify-start">
+                                <div className="max-w-[80%] rounded-2xl px-3 py-2 text-sm bg-gray-100 text-gray-800 shadow-sm">
+                                  {msg.text}
+                                </div>
+                              </div>
+                            );
                           }
-                        >
-                          {isAnswered ? 'Answered' : 'Waiting reply'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-2 text-gray-800">
-                      <div className="text-xs font-semibold text-gray-600 mb-0.5">
-                        Question
-                      </div>
-                      <div className="text-sm">
-                        {message.question}
-                      </div>
-                    </div>
-                    {hasAnswer && (
-                      <div className="mt-3">
-                        <div className="text-xs font-semibold text-gray-600 mb-0.5">
-                          Your latest reply
-                        </div>
-                        <div className="text-sm bg-love-light/40 border border-love-pink/30 rounded-lg p-2 text-gray-800">
-                          {message.answer}
-                        </div>
-                        {answeredAt && (
-                          <div className="text-[11px] text-gray-400 mt-1">
-                            Replied at {answeredAt}
+                          return (
+                            <div key={key} className="flex justify-end">
+                              <div className="max-w-[80%] rounded-2xl px-3 py-2 text-sm bg-love-red text-white shadow-sm">
+                                {msg.text}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {hasAnswer && answeredAt && (
+                          <div className="flex justify-start">
+                            <div className="text-[11px] text-gray-500">
+                              Replied at {answeredAt}
+                            </div>
+                          </div>
+                        )}
+                        {!hasAnswer && (
+                          <div className="flex justify-start">
+                            <div className="text-[11px] text-gray-500">
+                              Waiting for your reply to the customer
+                            </div>
                           </div>
                         )}
                       </div>
-                    )}
-                    <div className="mt-3">
-                      <div className="text-xs font-semibold text-gray-600 mb-1">
-                        Reply to customer
-                      </div>
-                      <textarea
-                        rows={2}
-                        className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                        value={draftValue}
-                        onChange={(e) =>
-                          setReplyDrafts(prev => ({
-                            ...prev,
-                            [message.id]: e.target.value
-                          }))
-                        }
-                        placeholder="Write a helpful reply..."
-                      />
-                      <div className="flex justify-end mt-2">
+                      <div className="px-4 py-3 border-t border-love-pink/20 flex items-center gap-2">
+                        <textarea
+                          rows={2}
+                          className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 text-xs sm:text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none bg-white/90"
+                          value={draftValue}
+                          onChange={(e) =>
+                            setReplyDrafts(prev => ({
+                              ...prev,
+                              [message.id]: e.target.value
+                            }))
+                          }
+                          placeholder="Write a helpful reply..."
+                        />
                         <button
                           type="button"
                           disabled={
@@ -1590,15 +1745,15 @@ LoveCraft support team`;
                             !draftValue.trim()
                           }
                           onClick={() => handleReply(message)}
-                          className="px-3 py-1.5 rounded-lg bg-love-red text-white text-xs font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="px-3 py-1.5 rounded-full bg-love-red text-white text-xs sm:text-sm font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           {replySubmittingId === message.id ? 'Sending...' : 'Send reply'}
                         </button>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           )}
         </div>
