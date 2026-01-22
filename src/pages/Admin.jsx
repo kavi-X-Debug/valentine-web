@@ -168,12 +168,11 @@ export default function Admin() {
       return;
     }
     if (selectedMessageId === null) {
-      setSelectedMessageId(filtered[0].id);
       return;
     }
     const exists = filtered.some(m => m.id === selectedMessageId);
     if (!exists) {
-      setSelectedMessageId(filtered[0].id);
+      setSelectedMessageId(null);
     }
   }, [messages, inboxShowUnread, selectedMessageId]);
 

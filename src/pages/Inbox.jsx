@@ -67,35 +67,10 @@ export default function Inbox() {
       }
       return;
     }
-    if (selectedId === null && messages.length > 0) {
-      const first = messages[0];
-      setSelectedId(first.id);
-      const hasAnswer = first.answer && String(first.answer).trim();
-      const userHasRead = first.userHasRead === true;
-      if (hasAnswer && !userHasRead) {
-        const ref = doc(db, 'productMessages', first.id);
-        updateDoc(ref, { userHasRead: true }).catch(() => {});
-      }
-      return;
-    }
     if (selectedId !== null) {
-      const current = messages.find(m => m.id === selectedId) || null;
-      if (!current && messages.length > 0) {
-        const first = messages[0];
-        setSelectedId(first.id);
-        const hasAnswer = first.answer && String(first.answer).trim();
-        const userHasRead = first.userHasRead === true;
-        if (hasAnswer && !userHasRead) {
-          const ref = doc(db, 'productMessages', first.id);
-          updateDoc(ref, { userHasRead: true }).catch(() => {});
-        }
-      } else if (current) {
-        const hasAnswer = current.answer && String(current.answer).trim();
-        const userHasRead = current.userHasRead === true;
-        if (hasAnswer && !userHasRead) {
-          const ref = doc(db, 'productMessages', current.id);
-          updateDoc(ref, { userHasRead: true }).catch(() => {});
-        }
+      const exists = messages.some(m => m.id === selectedId);
+      if (!exists) {
+        setSelectedId(null);
       }
     }
   }, [hasMessages, messages, selectedId]);
@@ -280,17 +255,23 @@ export default function Inbox() {
                     const last = thread.length > 0 ? thread[thread.length - 1] : null;
                     const lastText = last ? last.text : '';
                     const lastFromUser = last ? last.from === 'user' : false;
-                    const createdAt = m.createdAt && m.createdAt.toDate
-                      ? m.createdAt.toDate().toLocaleString()
-                      : '';
-                    const hasAnswer = m.answer && String(m.answer).trim();
-                    const isUnseen = hasAnswer && m.userHasRead !== true;
-                    const isActive = selected && selected.id === m.id;
-                    return (
+                  const createdAt = m.createdAt && m.createdAt.toDate
+                    ? m.createdAt.toDate().toLocaleString()
+                    : '';
+                  const hasAnswer = m.answer && String(m.answer).trim();
+                  const isUnseen = hasAnswer && m.userHasRead !== true;
+                  const isActive = selected && selected.id === m.id;
+                  return (
                       <button
                         key={m.id}
                         type="button"
-                        onClick={() => setSelectedId(m.id)}
+                        onClick={() => {
+                          setSelectedId(m.id);
+                          if (isUnseen) {
+                            const ref = doc(db, 'productMessages', m.id);
+                            updateDoc(ref, { userHasRead: true }).catch(() => {});
+                          }
+                        }}
                         className={
                           'w-full flex items-start gap-3 px-3 py-3 text-left transition-colors border-b border-love-pink/10 last:border-b-0 ' +
                           (isActive ? 'bg-love-light/60' : 'hover:bg-love-light/40')
