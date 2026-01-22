@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MessageCircle, Instagram, MessageSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { db } from '../firebase/config';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -14,11 +20,39 @@ export default function Contact() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const text = form.message.trim();
+    if (!text) {
+      return;
+    }
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
     setLoading(true);
     setSubmitted(false);
-    await new Promise(r => setTimeout(r, 600));
-    setLoading(false);
-    setSubmitted(true);
+    try {
+      await addDoc(collection(db, 'productMessages'), {
+        productId: 'contact',
+        productName: 'Contact Message',
+        userId: currentUser.uid,
+        userEmail: currentUser.email || form.email || '',
+        question: text,
+        answer: '',
+        status: 'open',
+        createdAt: serverTimestamp(),
+        answeredAt: null,
+        userHasRead: true,
+        messageType: 'contact',
+        formName: form.name.trim() || null,
+        formEmail: form.email.trim() || null
+      });
+      setSubmitted(true);
+      setForm({ name: '', email: '', message: '' });
+    } catch (err) {
+      console.error('Failed to send contact message', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -125,9 +159,9 @@ export default function Contact() {
             <div className="bg-white p-6 rounded-2xl shadow-lg border border-love-pink/20">
               <h2 className="text-lg font-semibold text-love-dark mb-3">More ways to reach us</h2>
               <div className="space-y-3 text-sm text-gray-700">
-                <a href="mailto:support@lovecraft.com" className="flex items-center space-x-3 hover:text-love-red transition-colors">
+                <a href="mailto:kavishchathur2002@gmail.com" className="flex items-center space-x-3 hover:text-love-red transition-colors">
                   <Mail className="h-4 w-4 text-love-red" />
-                  <span>support@lovecraft.com</span>
+                  <span>kavishchathur2002@gmail.com</span>
                 </a>
                 <a href="tel:+94763919823" className="flex items-center space-x-3 hover:text-love-red transition-colors">
                   <Phone className="h-4 w-4 text-love-red" />

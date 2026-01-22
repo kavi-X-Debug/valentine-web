@@ -176,6 +176,8 @@ export default function Inbox() {
                       ? m.answeredAt.toDate().toLocaleString()
                       : '';
                     const hasAnswer = m.answer && String(m.answer).trim();
+                    const isContact =
+                      m.messageType === 'contact' || m.productId === 'contact';
                     return (
                       <motion.div
                         key={m.id}
@@ -183,16 +185,26 @@ export default function Inbox() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.98 }}
                         transition={{ duration: 0.35, delay: 0.03 * index }}
-                        className="border border-love-pink/30 rounded-2xl p-4 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow"
+                        className={
+                          'border rounded-2xl p-4 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow ' +
+                          (isContact ? 'border-blue-300/90 bg-blue-50/70' : 'border-love-pink/30')
+                        }
                         whileHover={{ y: -2 }}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="text-base font-semibold text-love-dark">
-                            {m.productName || 'Product question'}
+                            {m.productName || (isContact ? 'Contact message' : 'Product question')}
                           </div>
                           <div className="flex items-center gap-2">
                             {hasAnswer ? (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100">
+                              <span
+                                className={
+                                  'text-xs px-2 py-0.5 rounded-full border ' +
+                                  (isContact
+                                    ? 'bg-blue-100 text-blue-800 border-blue-200'
+                                    : 'bg-green-50 text-green-700 border-green-100')
+                                }
+                              >
                                 Replied
                               </span>
                             ) : (
@@ -208,7 +220,12 @@ export default function Inbox() {
                         <div className="space-y-3 text-base">
                           <div className="flex justify-end">
                             <motion.div
-                              className="max-w-[80%] rounded-2xl px-3 py-2 text-sm sm:text-base text-white bg-gradient-to-br from-love-red via-rose-500 to-love-pink shadow-sm"
+                              className={
+                                'max-w-[80%] rounded-2xl px-3 py-2 text-sm sm:text-base text-white shadow-sm ' +
+                                (isContact
+                                  ? 'bg-gradient-to-br from-blue-500 via-sky-500 to-indigo-500'
+                                  : 'bg-gradient-to-br from-love-red via-rose-500 to-love-pink')
+                              }
                               whileHover={{ scale: 1.01 }}
                             >
                               {m.question}
@@ -217,7 +234,12 @@ export default function Inbox() {
                           {hasAnswer && (
                             <div className="flex justify-start">
                               <motion.div
-                                className="max-w-[80%] rounded-2xl px-3 py-2 bg-love-light/70 border border-love-pink/40 text-sm sm:text-base text-gray-800 shadow-sm"
+                                className={
+                                  'max-w-[80%] rounded-2xl px-3 py-2 text-sm sm:text-base shadow-sm border ' +
+                                  (isContact
+                                    ? 'bg-blue-50 border-blue-200 text-blue-900'
+                                    : 'bg-love-light/70 border-love-pink/40 text-gray-800')
+                                }
                                 whileHover={{ scale: 1.01 }}
                               >
                                 {m.answer}
