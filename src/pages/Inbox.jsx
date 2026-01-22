@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -51,17 +51,6 @@ export default function Inbox() {
         }
         setMessages(deduped);
         setLoading(false);
-        const unseenWithAnswer = list.filter(m => {
-          const hasAnswer = m.answer && String(m.answer).trim();
-          const userHasRead = m.userHasRead === true;
-          return hasAnswer && !userHasRead;
-        });
-        if (unseenWithAnswer.length > 0) {
-          unseenWithAnswer.forEach(m => {
-            const ref = doc(db, 'productMessages', m.id);
-            updateDoc(ref, { userHasRead: true }).catch(() => {});
-          });
-        }
       },
       () => {
         setMessages([]);
@@ -79,13 +68,34 @@ export default function Inbox() {
       return;
     }
     if (selectedId === null && messages.length > 0) {
-      setSelectedId(messages[0].id);
+      const first = messages[0];
+      setSelectedId(first.id);
+      const hasAnswer = first.answer && String(first.answer).trim();
+      const userHasRead = first.userHasRead === true;
+      if (hasAnswer && !userHasRead) {
+        const ref = doc(db, 'productMessages', first.id);
+        updateDoc(ref, { userHasRead: true }).catch(() => {});
+      }
       return;
     }
     if (selectedId !== null) {
-      const exists = messages.some(m => m.id === selectedId);
-      if (!exists && messages.length > 0) {
-        setSelectedId(messages[0].id);
+      const current = messages.find(m => m.id === selectedId) || null;
+      if (!current && messages.length > 0) {
+        const first = messages[0];
+        setSelectedId(first.id);
+        const hasAnswer = first.answer && String(first.answer).trim();
+        const userHasRead = first.userHasRead === true;
+        if (hasAnswer && !userHasRead) {
+          const ref = doc(db, 'productMessages', first.id);
+          updateDoc(ref, { userHasRead: true }).catch(() => {});
+        }
+      } else if (current) {
+        const hasAnswer = current.answer && String(current.answer).trim();
+        const userHasRead = current.userHasRead === true;
+        if (hasAnswer && !userHasRead) {
+          const ref = doc(db, 'productMessages', current.id);
+          updateDoc(ref, { userHasRead: true }).catch(() => {});
+        }
       }
     }
   }, [hasMessages, messages, selectedId]);
@@ -116,6 +126,15 @@ export default function Inbox() {
       setReplySendingId(null);
     }
   }
+
+  const unseenChatsCount = useMemo(() => {
+    return messages.filter(m => {
+      if (!m) return false;
+      const hasAnswer = m.answer && String(m.answer).trim();
+      const userHasRead = m.userHasRead === true;
+      return hasAnswer && !userHasRead;
+    }).length;
+  }, [messages]);
 
   const selected = selectedId
     ? messages.find(m => m.id === selectedId) || null
@@ -166,15 +185,23 @@ export default function Inbox() {
           whileHover={{ y: -3, boxShadow: '0 20px 40px rgba(15,23,42,0.18)' }}
           transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         >
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <motion.h1
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
-              className="text-3xl sm:text-4xl font-cursive text-love-dark tracking-tight"
-            >
-              Your Inbox
-            </motion.h1>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div>
+              <motion.h1
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4 }}
+                className="text-3xl sm:text-4xl font-cursive text-love-dark tracking-tight"
+              >
+                Your Inbox
+              </motion.h1>
+              {unseenChatsCount > 0 && (
+                <div className="mt-1 inline-flex items-center text-[11px] text-love-red bg-white/80 px-2.5 py-0.5 rounded-full border border-love-red/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-love-red mr-2" />
+                  {unseenChatsCount} new {unseenChatsCount === 1 ? 'reply' : 'replies'}
+                </div>
+              )}
+            </div>
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -257,6 +284,7 @@ export default function Inbox() {
                       ? m.createdAt.toDate().toLocaleString()
                       : '';
                     const hasAnswer = m.answer && String(m.answer).trim();
+                    const isUnseen = hasAnswer && m.userHasRead !== true;
                     const isActive = selected && selected.id === m.id;
                     return (
                       <button
@@ -280,7 +308,7 @@ export default function Inbox() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2 mb-0.5">
-                            <div className="text-sm font-semibold text-love-dark truncate">
+                            <div className="text-sm font-semibold text-love-dark break-words">
                               {m.productName || (isContact ? 'Customer Service' : 'Product chat')}
                             </div>
                             {createdAt && (
@@ -295,7 +323,12 @@ export default function Inbox() {
                                 ? `${lastFromUser ? 'You: ' : 'Store: '} ${lastText}`
                                 : 'No messages yet'}
                             </div>
-                            <div className="shrink-0">
+                            <div className="shrink-0 flex items-center gap-1">
+                              {isUnseen && (
+                                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-love-red text-white text-[10px] font-semibold">
+                                  1
+                                </span>
+                              )}
                               {hasAnswer ? (
                                 <span
                                   className={
