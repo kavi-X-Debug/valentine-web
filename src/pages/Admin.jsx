@@ -766,7 +766,10 @@ LoveCraft support team`;
                 ? 'bg-love-red text-white shadow-sm'
                 : 'text-gray-600 hover:text-love-red'
             }`}
-            onClick={() => setTab('inbox')}
+            onClick={() => {
+              setTab('inbox');
+              setSelectedMessageId(null);
+            }}
           >
             Inbox
             {unreadMessageCount > 0 && (
