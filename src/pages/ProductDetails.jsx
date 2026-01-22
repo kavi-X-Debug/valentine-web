@@ -6,7 +6,7 @@ import { MOCK_PRODUCTS } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
-import { collection, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, addDoc, serverTimestamp, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -171,25 +171,48 @@ export default function ProductDetails() {
     setQuestionError('');
     setQuestionSuccess('');
     try {
-      await addDoc(collection(db, 'productMessages'), {
-        productId: product.id,
-        productName: product.name || '',
-        userId: currentUser.uid,
-        userEmail: currentUser.email || '',
-        question: text,
-        answer: '',
-        status: 'open',
-        createdAt: serverTimestamp(),
-        answeredAt: null,
-        userHasRead: true,
-        thread: [
-          {
+      const refColl = collection(db, 'productMessages');
+      const existingQuery = query(
+        refColl,
+        where('userId', '==', currentUser.uid),
+        where('productId', '==', product.id)
+      );
+      const existingSnap = await getDocs(existingQuery);
+      if (!existingSnap.empty) {
+        const docSnap = existingSnap.docs[0];
+        const ref = doc(db, 'productMessages', docSnap.id);
+        await updateDoc(ref, {
+          question: text,
+          status: 'open',
+          answeredAt: null,
+          userHasRead: true,
+          thread: arrayUnion({
             from: 'user',
             text,
             createdAt: Date.now()
-          }
-        ]
-      });
+          })
+        });
+      } else {
+        await addDoc(refColl, {
+          productId: product.id,
+          productName: product.name || '',
+          userId: currentUser.uid,
+          userEmail: currentUser.email || '',
+          question: text,
+          answer: '',
+          status: 'open',
+          createdAt: serverTimestamp(),
+          answeredAt: null,
+          userHasRead: true,
+          thread: [
+            {
+              from: 'user',
+              text,
+              createdAt: Date.now()
+            }
+          ]
+        });
+      }
       setQuestionText('');
       setQuestionSuccess('Your question has been sent.');
     } catch (err) {

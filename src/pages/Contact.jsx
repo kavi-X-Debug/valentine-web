@@ -4,7 +4,7 @@ import { Mail, Phone, MessageCircle, Instagram, MessageSquare } from 'lucide-rea
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
@@ -31,28 +31,54 @@ export default function Contact() {
     setLoading(true);
     setSubmitted(false);
     try {
-      await addDoc(collection(db, 'productMessages'), {
-        productId: 'contact',
-        productName: 'Contact Message',
-        userId: currentUser.uid,
-        userEmail: currentUser.email || form.email || '',
-        question: text,
-        answer: '',
-        status: 'open',
-        createdAt: serverTimestamp(),
-        answeredAt: null,
-        userHasRead: true,
-        messageType: 'contact',
-        formName: form.name.trim() || null,
-        formEmail: form.email.trim() || null,
-        thread: [
-          {
+      const refColl = collection(db, 'productMessages');
+      const existingQuery = query(
+        refColl,
+        where('userId', '==', currentUser.uid),
+        where('productId', '==', 'contact')
+      );
+      const existingSnap = await getDocs(existingQuery);
+      if (!existingSnap.empty) {
+        const docSnap = existingSnap.docs[0];
+        const ref = doc(db, 'productMessages', docSnap.id);
+        await updateDoc(ref, {
+          question: text,
+          status: 'open',
+          answeredAt: null,
+          userHasRead: true,
+          messageType: 'contact',
+          formName: form.name.trim() || null,
+          formEmail: form.email.trim() || null,
+          thread: arrayUnion({
             from: 'user',
             text,
             createdAt: Date.now()
-          }
-        ]
-      });
+          })
+        });
+      } else {
+        await addDoc(refColl, {
+          productId: 'contact',
+          productName: 'Contact Message',
+          userId: currentUser.uid,
+          userEmail: currentUser.email || form.email || '',
+          question: text,
+          answer: '',
+          status: 'open',
+          createdAt: serverTimestamp(),
+          answeredAt: null,
+          userHasRead: true,
+          messageType: 'contact',
+          formName: form.name.trim() || null,
+          formEmail: form.email.trim() || null,
+          thread: [
+            {
+              from: 'user',
+              text,
+              createdAt: Date.now()
+            }
+          ]
+        });
+      }
       setSubmitted(true);
       setForm({ name: '', email: '', message: '' });
     } catch (err) {

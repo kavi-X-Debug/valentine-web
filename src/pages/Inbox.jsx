@@ -40,7 +40,15 @@ export default function Inbox() {
             const tb = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
             return tb - ta;
           });
-        setMessages(list);
+        const deduped = [];
+        const seen = new Set();
+        for (const m of list) {
+          const key = String(m.productId || 'none') + '|' + String(m.messageType || 'product');
+          if (seen.has(key)) continue;
+          seen.add(key);
+          deduped.push(m);
+        }
+        setMessages(deduped);
         setLoading(false);
         const unseenWithAnswer = list.filter(m => {
           const hasAnswer = m.answer && String(m.answer).trim();
