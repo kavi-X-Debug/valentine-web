@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
@@ -10,6 +10,8 @@ export default function Inbox() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const hasMessages = !loading && messages.length > 0;
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [replySendingId, setReplySendingId] = useState(null);
 
   useEffect(() => {
     if (!currentUser) {
@@ -59,6 +61,33 @@ export default function Inbox() {
     );
     return () => unsub();
   }, [currentUser]);
+
+  async function handleThreadReply(thread) {
+    if (!currentUser || !thread || !thread.id) return;
+    const raw = replyDrafts[thread.id] || '';
+    const text = raw.trim();
+    if (!text) return;
+    setReplySendingId(thread.id);
+    try {
+      const ref = doc(db, 'productMessages', thread.id);
+      await updateDoc(ref, {
+        question: text,
+        status: 'open',
+        answeredAt: null,
+        userHasRead: true,
+        thread: arrayUnion({
+          from: 'user',
+          text,
+          createdAt: Date.now()
+        })
+      });
+      setReplyDrafts(prev => ({ ...prev, [thread.id]: '' }));
+    } catch (err) {
+      console.error('Failed to send reply', err);
+    } finally {
+      setReplySendingId(null);
+    }
+  }
 
   if (!currentUser) {
     return (
@@ -178,6 +207,31 @@ export default function Inbox() {
                     const hasAnswer = m.answer && String(m.answer).trim();
                     const isContact =
                       m.messageType === 'contact' || m.productId === 'contact';
+                    let thread = [];
+                    if (Array.isArray(m.thread) && m.thread.length > 0) {
+                      thread = [...m.thread];
+                    } else {
+                      if (m.question) {
+                        thread.push({
+                          from: 'user',
+                          text: m.question,
+                          createdAt: 0
+                        });
+                      }
+                      if (m.answer) {
+                        thread.push({
+                          from: 'admin',
+                          text: m.answer,
+                          createdAt: 1
+                        });
+                      }
+                    }
+                    thread.sort((a, b) => {
+                      const ta = typeof a.createdAt === 'number' ? a.createdAt : 0;
+                      const tb = typeof b.createdAt === 'number' ? b.createdAt : 0;
+                      return ta - tb;
+                    });
+                    const draftValue = replyDrafts[m.id] || '';
                     return (
                       <motion.div
                         key={m.id}
@@ -218,37 +272,47 @@ export default function Inbox() {
                           </div>
                         </div>
                         <div className="space-y-3 text-base">
-                          <div className="flex justify-end">
-                            <motion.div
-                              className={
-                                'max-w-[80%] rounded-2xl px-3 py-2 text-sm sm:text-base text-white shadow-sm ' +
-                                (isContact
-                                  ? 'bg-gradient-to-br from-blue-500 via-sky-500 to-indigo-500'
-                                  : 'bg-gradient-to-br from-love-red via-rose-500 to-love-pink')
-                              }
-                              whileHover={{ scale: 1.01 }}
-                            >
-                              {m.question}
-                            </motion.div>
-                          </div>
-                          {hasAnswer && (
+                          {thread.map((msg, msgIndex) => {
+                            const fromUser = msg.from === 'user';
+                            const key = `${m.id}-${msgIndex}`;
+                            if (fromUser) {
+                              return (
+                                <div key={key} className="flex justify-end">
+                                  <motion.div
+                                    className={
+                                      'max-w-[80%] rounded-2xl px-3 py-2 text-sm sm:text-base text-white shadow-sm ' +
+                                      (isContact
+                                        ? 'bg-gradient-to-br from-blue-500 via-sky-500 to-indigo-500'
+                                        : 'bg-gradient-to-br from-love-red via-rose-500 to-love-pink')
+                                    }
+                                    whileHover={{ scale: 1.01 }}
+                                  >
+                                    {msg.text}
+                                  </motion.div>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div key={key} className="flex justify-start">
+                                <motion.div
+                                  className={
+                                    'max-w-[80%] rounded-2xl px-3 py-2 text-sm sm:text-base shadow-sm border ' +
+                                    (isContact
+                                      ? 'bg-blue-50 border-blue-200 text-blue-900'
+                                      : 'bg-love-light/70 border-love-pink/40 text-gray-800')
+                                  }
+                                  whileHover={{ scale: 1.01 }}
+                                >
+                                  {msg.text}
+                                </motion.div>
+                              </div>
+                            );
+                          })}
+                          {hasAnswer && answeredAt && (
                             <div className="flex justify-start">
-                              <motion.div
-                                className={
-                                  'max-w-[80%] rounded-2xl px-3 py-2 text-sm sm:text-base shadow-sm border ' +
-                                  (isContact
-                                    ? 'bg-blue-50 border-blue-200 text-blue-900'
-                                    : 'bg-love-light/70 border-love-pink/40 text-gray-800')
-                                }
-                                whileHover={{ scale: 1.01 }}
-                              >
-                                {m.answer}
-                                {answeredAt && (
-                                  <div className="mt-1 text-xs text-gray-500">
-                                    Replied at {answeredAt}
-                                  </div>
-                                )}
-                              </motion.div>
+                              <div className="text-[11px] text-gray-500">
+                                Replied at {answeredAt}
+                              </div>
                             </div>
                           )}
                           {!hasAnswer && (
@@ -258,6 +322,30 @@ export default function Inbox() {
                               </div>
                             </div>
                           )}
+                          <div className="pt-2 flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={draftValue}
+                              onChange={(e) =>
+                                setReplyDrafts(prev => ({
+                                  ...prev,
+                                  [m.id]: e.target.value
+                                }))
+                              }
+                              placeholder="Reply to this conversation..."
+                              className="flex-1 px-3 py-1.5 rounded-full border border-gray-300 text-xs sm:text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none bg-white/90"
+                            />
+                            <button
+                              type="button"
+                              disabled={
+                                replySendingId === m.id || !draftValue.trim()
+                              }
+                              onClick={() => handleThreadReply(m)}
+                              className="px-3 py-1.5 rounded-full bg-love-red text-white text-xs sm:text-sm font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                              {replySendingId === m.id ? 'Sending...' : 'Reply'}
+                            </button>
+                          </div>
                         </div>
                       </motion.div>
                     );

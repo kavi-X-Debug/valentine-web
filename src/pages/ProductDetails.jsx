@@ -181,7 +181,14 @@ export default function ProductDetails() {
         status: 'open',
         createdAt: serverTimestamp(),
         answeredAt: null,
-        userHasRead: true
+        userHasRead: true,
+        thread: [
+          {
+            from: 'user',
+            text,
+            createdAt: Date.now()
+          }
+        ]
       });
       setQuestionText('');
       setQuestionSuccess('Your question has been sent.');

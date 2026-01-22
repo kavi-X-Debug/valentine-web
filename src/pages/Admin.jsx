@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { db } from '../firebase/config';
-import { collection, onSnapshot, orderBy, query, updateDoc, doc, setDoc, increment, addDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query, updateDoc, doc, setDoc, increment, addDoc, serverTimestamp, deleteDoc, arrayUnion } from 'firebase/firestore';
 import { Search, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
 import { MOCK_PRODUCTS } from '../data/products';
@@ -337,7 +337,12 @@ export default function Admin() {
         answer: text,
         status: 'answered',
         answeredAt: serverTimestamp(),
-        userHasRead: false
+        userHasRead: false,
+        thread: arrayUnion({
+          from: 'admin',
+          text,
+          createdAt: Date.now()
+        })
       });
       setReplyDrafts(prev => ({ ...prev, [message.id]: '' }));
     } catch (err) {
@@ -1539,7 +1544,7 @@ LoveCraft support team`;
                     {hasAnswer && (
                       <div className="mt-3">
                         <div className="text-xs font-semibold text-gray-600 mb-0.5">
-                          Your reply
+                          Your latest reply
                         </div>
                         <div className="text-sm bg-love-light/40 border border-love-pink/30 rounded-lg p-2 text-gray-800">
                           {message.answer}
@@ -1551,38 +1556,36 @@ LoveCraft support team`;
                         )}
                       </div>
                     )}
-                    {!hasAnswer && (
-                      <div className="mt-3">
-                        <div className="text-xs font-semibold text-gray-600 mb-1">
-                          Reply to customer
-                        </div>
-                        <textarea
-                          rows={2}
-                          className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                          value={draftValue}
-                          onChange={(e) =>
-                            setReplyDrafts(prev => ({
-                              ...prev,
-                              [message.id]: e.target.value
-                            }))
-                          }
-                          placeholder="Write a helpful reply..."
-                        />
-                        <div className="flex justify-end mt-2">
-                          <button
-                            type="button"
-                            disabled={
-                              replySubmittingId === message.id ||
-                              !draftValue.trim()
-                            }
-                            onClick={() => handleReply(message)}
-                            className="px-3 py-1.5 rounded-lg bg-love-red text-white text-xs font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                          >
-                            {replySubmittingId === message.id ? 'Sending...' : 'Send reply'}
-                          </button>
-                        </div>
+                    <div className="mt-3">
+                      <div className="text-xs font-semibold text-gray-600 mb-1">
+                        Reply to customer
                       </div>
-                    )}
+                      <textarea
+                        rows={2}
+                        className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                        value={draftValue}
+                        onChange={(e) =>
+                          setReplyDrafts(prev => ({
+                            ...prev,
+                            [message.id]: e.target.value
+                          }))
+                        }
+                        placeholder="Write a helpful reply..."
+                      />
+                      <div className="flex justify-end mt-2">
+                        <button
+                          type="button"
+                          disabled={
+                            replySubmittingId === message.id ||
+                            !draftValue.trim()
+                          }
+                          onClick={() => handleReply(message)}
+                          className="px-3 py-1.5 rounded-lg bg-love-red text-white text-xs font-medium hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {replySubmittingId === message.id ? 'Sending...' : 'Send reply'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 );
               })}

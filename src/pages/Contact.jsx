@@ -44,7 +44,14 @@ export default function Contact() {
         userHasRead: true,
         messageType: 'contact',
         formName: form.name.trim() || null,
-        formEmail: form.email.trim() || null
+        formEmail: form.email.trim() || null,
+        thread: [
+          {
+            from: 'user',
+            text,
+            createdAt: Date.now()
+          }
+        ]
       });
       setSubmitted(true);
       setForm({ name: '', email: '', message: '' });
