@@ -62,6 +62,7 @@ export default function Admin() {
   const [replySubmittingId, setReplySubmittingId] = useState(null);
   const [inboxShowUnread, setInboxShowUnread] = useState(true);
   const [selectedMessageId, setSelectedMessageId] = useState(null);
+  const [markReadSubmittingId, setMarkReadSubmittingId] = useState(null);
   const [outOfStockSendingId, setOutOfStockSendingId] = useState(null);
   const [outOfStockNotice, setOutOfStockNotice] = useState(null);
 
@@ -374,6 +375,21 @@ export default function Admin() {
       console.error('Failed to send reply', err);
     } finally {
       setReplySubmittingId(null);
+    }
+  }
+
+  async function handleMarkAsRead(message) {
+    if (!message || !message.id) return;
+    setMarkReadSubmittingId(message.id);
+    try {
+      const ref = doc(db, 'productMessages', message.id);
+      await updateDoc(ref, {
+        status: 'answered'
+      });
+    } catch (err) {
+      console.error('Failed to mark as read', err);
+    } finally {
+      setMarkReadSubmittingId(null);
     }
   }
 
@@ -1740,6 +1756,14 @@ LoveCraft support team`;
                           }
                           placeholder="Write a helpful reply..."
                         />
+                        <button
+                          type="button"
+                          disabled={markReadSubmittingId === message.id || isAnswered}
+                          onClick={() => handleMarkAsRead(message)}
+                          className="px-3 py-1.5 rounded-full border border-gray-300 text-xs sm:text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {markReadSubmittingId === message.id ? 'Marking...' : 'Mark as read'}
+                        </button>
                         <button
                           type="button"
                           disabled={
