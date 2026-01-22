@@ -64,6 +64,10 @@ export default function Admin() {
   const [outOfStockSendingId, setOutOfStockSendingId] = useState(null);
   const [outOfStockNotice, setOutOfStockNotice] = useState(null);
 
+  const unreadMessageCount = useMemo(() => {
+    return messages.filter(m => m && m.status !== 'answered').length;
+  }, [messages]);
+
   useEffect(() => {
     const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(
@@ -735,6 +739,11 @@ LoveCraft support team`;
             onClick={() => setTab('inbox')}
           >
             Inbox
+            {unreadMessageCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center rounded-full bg-white/90 text-love-red text-[10px] font-semibold px-2 py-0.5 border border-love-red/40">
+                {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -1486,8 +1495,8 @@ LoveCraft support team`;
             <div className="space-y-4 max-h-[32rem] overflow-y-auto pr-1 text-sm">
               {messages
                 .filter(message => {
-                  const hasAnswer = message.answer && String(message.answer).trim();
-                  return inboxShowUnread ? !hasAnswer : !!hasAnswer;
+                  const isAnswered = message.status === 'answered';
+                  return inboxShowUnread ? !isAnswered : isAnswered;
                 })
                 .map(message => {
                 const createdAt = message.createdAt && message.createdAt.toDate
@@ -1497,6 +1506,7 @@ LoveCraft support team`;
                   ? message.answeredAt.toDate().toLocaleString()
                   : '';
                 const hasAnswer = message.answer && String(message.answer).trim();
+                const isAnswered = message.status === 'answered';
                 const draftValue = replyDrafts[message.id] || '';
                 return (
                   <div
@@ -1524,12 +1534,12 @@ LoveCraft support team`;
                         <span
                           className={
                             'inline-flex items-center px-2 py-0.5 rounded-full font-medium ' +
-                            (hasAnswer
+                            (isAnswered
                               ? 'bg-green-100 text-green-800'
                               : 'bg-yellow-100 text-yellow-800')
                           }
                         >
-                          {hasAnswer ? 'Answered' : 'Waiting reply'}
+                          {isAnswered ? 'Answered' : 'Waiting reply'}
                         </span>
                       </div>
                     </div>
