@@ -238,7 +238,10 @@ export default function Profile() {
   }
 
   async function submitReview(order, item) {
-    if (!currentUser || !order || !item) return;
+    if (!currentUser || !order) return;
+    const productIdValue =
+      (item && item.id != null ? item.id : reviewProductId) ?? null;
+    if (productIdValue == null) return;
     const trimmed = reviewText.trim();
     if (!trimmed) return;
     setReviewSubmitting(true);
@@ -252,7 +255,11 @@ export default function Profile() {
       const existingSnapshot = await getDocs(existingQuery);
       const alreadyReviewed = existingSnapshot.docs.some(docSnap => {
         const data = docSnap.data();
-        return data && data.userId === currentUser.uid && data.productId === item.id;
+        return (
+          data &&
+          data.userId === currentUser.uid &&
+          data.productId === productIdValue
+        );
       });
 
       if (alreadyReviewed) {
@@ -269,18 +276,15 @@ export default function Profile() {
 
       const displayName = form.name || currentUser.displayName || '';
       const nameFallback = displayName || currentUser.email || 'Anonymous';
-      await setDoc(
-        doc(reviewsRef),
-        {
-          productId: item.id,
-          productName: item.name || '',
-          userId: currentUser.uid,
-          userName: nameFallback,
-          message: trimmed,
-          createdAt: new Date(),
-          orderId: order.id || null
-        }
-      );
+      await setDoc(doc(reviewsRef), {
+        productId: productIdValue,
+        productName: (item && item.name) || reviewProductName || '',
+        userId: currentUser.uid,
+        userName: nameFallback,
+        message: trimmed,
+        createdAt: new Date(),
+        orderId: order.id || null
+      });
       setReviewText('');
       setReviewOrderId(null);
       setReviewProductId(null);
