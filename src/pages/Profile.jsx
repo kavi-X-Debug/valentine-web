@@ -1158,7 +1158,7 @@ export default function Profile() {
           transition={{ duration: 0.25 }}
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-love-dark text-white text-sm shadow-lg"
         >
-          Your Review is Successfully Submitted
+          Your review is submitted successfully
         </motion.div>
       )}
     </div>

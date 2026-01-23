@@ -558,7 +558,7 @@ export default function ProductDetails() {
               <button
                 type="button"
                 onClick={() => {
-                  addToCart(product, quantity, customText);
+                  addToCart(product, quantity);
                   setAdded(true);
                   setShowConfirm(false);
                   setTimeout(() => setAdded(false), 2000);

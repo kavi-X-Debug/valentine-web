@@ -21,6 +21,14 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, rev
         : firstReview.message
       : '';
 
+  function handleCardClick(e) {
+    const target = e.target;
+    if (target.closest('button') || target.closest('a')) {
+      return;
+    }
+    navigate(`/products/${product.id}`);
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -28,7 +36,8 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, rev
       viewport={{ once: true, amount: 0.2 }}
       whileHover={{ y: -8, scale: 1.02 }}
       transition={{ duration: 0.3 }}
-      className="bg-white rounded-2xl shadow-sm hover:shadow-lg overflow-hidden border border-love-pink/30 transition-all flex flex-col"
+      onClick={handleCardClick}
+      className="bg-white rounded-2xl shadow-sm hover:shadow-lg overflow-hidden border border-love-pink/30 transition-all flex flex-col cursor-pointer"
     >
       <div className="relative aspect-square overflow-hidden">
         <img 
