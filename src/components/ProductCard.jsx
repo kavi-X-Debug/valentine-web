@@ -28,7 +28,7 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, rev
       viewport={{ once: true, amount: 0.2 }}
       whileHover={{ y: -8, scale: 1.02 }}
       transition={{ duration: 0.3 }}
-      className="bg-white rounded-2xl shadow-sm hover:shadow-lg overflow-hidden border border-love-pink/30 transition-all h-full flex flex-col"
+      className="bg-white rounded-2xl shadow-sm hover:shadow-lg overflow-hidden border border-love-pink/30 transition-all flex flex-col"
     >
       <div className="relative aspect-square overflow-hidden">
         <img 
@@ -46,7 +46,7 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, rev
         </button>
       </div>
       
-      <div className="p-4 sm:p-5 flex flex-col h-full">
+      <div className="p-4 sm:p-5 flex flex-col">
         <div className="text-xs text-love-red font-medium mb-1 uppercase tracking-wider">{product.category}</div>
         <Link to={`/products/${product.id}`}>
           <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-1 hover:text-love-red transition-colors truncate">
@@ -82,7 +82,7 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, rev
             No reviews yet
           </div>
         )}
-        <div className="flex flex-col mt-auto space-y-2">
+        <div className="flex flex-col mt-2 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xl font-bold text-love-dark">${product.price.toFixed(2)}</span>
             <button 
