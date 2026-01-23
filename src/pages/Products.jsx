@@ -209,9 +209,14 @@ export default function Products() {
           if (pid === undefined || pid === null) return;
           const key = pid;
           if (!summary[key]) {
-            summary[key] = { count: 0, latest: [] };
+            summary[key] = { count: 0, latest: [], ratingSum: 0 };
           }
           summary[key].count += 1;
+          const ratingValue =
+            typeof item.rating === 'number' && item.rating > 0
+              ? item.rating
+              : 0;
+          summary[key].ratingSum += ratingValue;
           const arr = summary[key].latest;
           if (arr.length < 2 && item.message && typeof item.message === 'string') {
             arr.push({
@@ -219,6 +224,14 @@ export default function Products() {
               userName: item.userName || '',
               message: item.message
             });
+          }
+        });
+        Object.keys(summary).forEach(key => {
+          const entry = summary[key];
+          if (entry.count > 0 && entry.ratingSum > 0) {
+            entry.average = entry.ratingSum / entry.count;
+          } else {
+            entry.average = 0;
           }
         });
         setReviewSummary(summary);
