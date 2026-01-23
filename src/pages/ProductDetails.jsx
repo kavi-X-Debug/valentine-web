@@ -425,6 +425,7 @@ export default function ProductDetails() {
             ) : (
               <div className="space-y-3">
                 {reviews.map(review => {
+                  const rating = typeof review.rating === 'number' ? review.rating : 0;
                   const createdAt = review.createdAt && review.createdAt.toDate
                     ? review.createdAt.toDate().toLocaleDateString()
                     : '';
@@ -434,8 +435,25 @@ export default function ProductDetails() {
                       className="bg-white border border-love-pink/20 rounded-xl p-3 shadow-sm"
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <div className="text-sm font-semibold text-gray-800">
-                          {review.userName || 'Someone'}
+                        <div>
+                          <div className="text-sm font-semibold text-gray-800">
+                            {review.userName || 'Someone'}
+                          </div>
+                          {rating > 0 && (
+                            <div className="flex items-center gap-0.5 mt-0.5">
+                              {[1, 2, 3, 4, 5].map(value => (
+                                <Star
+                                  key={value}
+                                  className={
+                                    'h-3 w-3 ' +
+                                    (value <= rating
+                                      ? 'text-yellow-400 fill-yellow-400'
+                                      : 'text-gray-300')
+                                  }
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
                         {createdAt && (
                           <div className="text-xs text-gray-400">

@@ -684,9 +684,9 @@ LoveCraft support team`;
       };
 
       const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const templateId = 'template_owu6hlo';
       const publicKey = 'GNdiN4DMl_vTXQ7iE';
-      if (!serviceId || !templateId) {
+      if (!serviceId) {
         setOutOfStockNotice({
           orderId: order.id,
           type: 'error',
