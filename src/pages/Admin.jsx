@@ -554,6 +554,19 @@ export default function Admin() {
     }
   }
 
+  async function handleAddStock(productId, amount) {
+    const delta = Number(amount);
+    if (!productId || !Number.isFinite(delta) || delta <= 0) return;
+    try {
+      const ref = doc(db, 'products', productId);
+      await updateDoc(ref, {
+        quantity: increment(delta)
+      });
+    } catch (err) {
+      console.error('Failed to add stock', err);
+    }
+  }
+
   function startEditProduct(prod) {
     if (!prod || prod.source !== 'firestore') return;
     setEditingProductId(prod.id);

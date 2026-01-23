@@ -93,8 +93,10 @@ export default function ProductDetails() {
     setActiveImageIndex(0);
   }, [product]);
 
-  const isOutOfStock =
-    product && typeof product.quantity === 'number' && product.quantity <= 0;
+  const effectiveQuantity =
+    product && typeof product.quantity === 'number' ? product.quantity : 20;
+
+  const isOutOfStock = effectiveQuantity <= 0;
 
   const handleAddToCart = () => {
     if (!currentUser) {
@@ -336,6 +338,9 @@ export default function ProductDetails() {
               </div>
             )}
             <p className="text-3xl font-bold text-gray-900">${product.price.toFixed(2)}</p>
+            <p className="mt-1 text-sm text-gray-600">
+              Quantity available: {effectiveQuantity}
+            </p>
           </div>
 
           <div className="mt-2 p-4 rounded-xl bg-love-light/40 border border-love-pink/30">
