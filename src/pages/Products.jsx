@@ -50,6 +50,7 @@ export default function Products() {
         image: p.image || '',
         description: p.description || '',
         tags: Array.isArray(p.tags) ? p.tags : [],
+        quantity: typeof p.quantity === 'number' ? p.quantity : 20,
         source: 'firestore'
       }));
     return [...firestoreList, ...staticList];

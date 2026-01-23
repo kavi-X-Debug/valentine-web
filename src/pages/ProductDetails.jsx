@@ -66,7 +66,8 @@ export default function ProductDetails() {
             image: data.image || '',
             description: data.description || '',
             tags: Array.isArray(data.tags) ? data.tags : [],
-            subImages: Array.isArray(data.subImages) ? data.subImages : []
+            subImages: Array.isArray(data.subImages) ? data.subImages : [],
+            quantity: typeof data.quantity === 'number' ? data.quantity : 20
           });
         } else {
           setProduct(null);
@@ -91,6 +92,9 @@ export default function ProductDetails() {
   useEffect(() => {
     setActiveImageIndex(0);
   }, [product]);
+
+  const isOutOfStock =
+    product && typeof product.quantity === 'number' && product.quantity <= 0;
 
   const handleAddToCart = () => {
     if (!currentUser) {
@@ -314,6 +318,11 @@ export default function ProductDetails() {
           <div>
             <div className="text-sm text-love-red font-medium uppercase tracking-wider mb-2">{product.category}</div>
             <h1 className="text-4xl font-cursive text-love-dark mb-2">{product.name}</h1>
+            {isOutOfStock && (
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold mb-3">
+                Out of stock
+              </div>
+            )}
             {reviews.length > 0 && (
               <div className="flex items-center space-x-2 text-yellow-500 text-sm mb-4">
                 <div className="flex">
@@ -398,11 +407,19 @@ export default function ProductDetails() {
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 w-full">
               <button 
                 onClick={handleAddToCart}
-                disabled={added}
-                className={`w-full sm:flex-1 px-6 py-3 rounded-lg font-medium transition-colors shadow-md flex items-center justify-center space-x-2 ${added ? 'bg-green-600 text-white' : 'bg-love-red text-white hover:bg-red-700'}`}
+                disabled={added || isOutOfStock}
+                className={`w-full sm:flex-1 px-6 py-3 rounded-lg font-medium transition-colors shadow-md flex items-center justify-center space-x-2 ${
+                  added
+                    ? 'bg-green-600 text-white'
+                    : isOutOfStock
+                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    : 'bg-love-red text-white hover:bg-red-700'
+                }`}
               >
                 {added ? <Check className="h-5 w-5" /> : <ShoppingCart className="h-5 w-5" />}
-                <span>{added ? 'Added to Cart' : 'Add to Cart'}</span>
+                <span>
+                  {added ? 'Added to Cart' : isOutOfStock ? 'Out of stock' : 'Add to Cart'}
+                </span>
               </button>
               <button className="w-full sm:w-auto p-3 border border-gray-300 rounded-lg hover:border-love-red hover:text-love-red transition-colors flex items-center justify-center">
                 <Heart className="h-5 w-5" />
@@ -412,8 +429,22 @@ export default function ProductDetails() {
           </div>
           
           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 pt-4">
-             <div className="flex items-center"><Check className="h-4 w-4 mr-1 text-green-500" /> In Stock</div>
-             <div className="flex items-center"><Check className="h-4 w-4 mr-1 text-green-500" /> Free Shipping</div>
+            <div className="flex items-center">
+              {isOutOfStock ? (
+                <>
+                  <Check className="h-4 w-4 mr-1 text-red-500" />
+                  <span className="text-red-600">Out of stock</span>
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-1 text-green-500" />
+                  <span>In Stock</span>
+                </>
+              )}
+            </div>
+            <div className="flex items-center">
+              <Check className="h-4 w-4 mr-1 text-green-500" /> Free Shipping
+            </div>
           </div>
 
           <div className="mt-6 border-t border-gray-200 pt-5">

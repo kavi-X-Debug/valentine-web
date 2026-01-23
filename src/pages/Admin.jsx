@@ -23,6 +23,7 @@ export default function Admin() {
     name: '',
     category: '',
     price: '',
+    quantity: '20',
     image: '',
     description: '',
     tags: '',
@@ -41,6 +42,7 @@ export default function Admin() {
     name: '',
     category: '',
     price: '',
+    quantity: '',
     image: '',
     description: '',
     tags: '',
@@ -351,6 +353,34 @@ export default function Admin() {
     };
   }, [orders]);
 
+  function handleDownloadReport() {
+    const lines = [];
+    lines.push('Section,Metric,Value');
+    lines.push(`Summary,Total revenue,${analytics.totalRevenue.toFixed(2)}`);
+    lines.push(`Summary,Total orders,${analytics.totalOrders}`);
+    lines.push(`Summary,Orders last 7 days,${analytics.recentOrders}`);
+    lines.push('');
+    lines.push('Date,Orders,Revenue');
+    analytics.dailyData.forEach(day => {
+      lines.push(`${day.date},${day.orders},${day.revenue.toFixed(2)}`);
+    });
+    lines.push('');
+    lines.push('Status,Count');
+    analytics.statusData.forEach(item => {
+      lines.push(`${item.status},${item.count}`);
+    });
+    const csvContent = lines.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `admin-report-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   async function handleReply(message) {
     if (!message || !message.id) return;
     const textRaw = replyDrafts[message.id] || '';
@@ -398,6 +428,7 @@ export default function Admin() {
     const name = productForm.name.trim();
     const category = productForm.category.trim();
     const priceRaw = productForm.price.trim();
+    const quantityRaw = String(productForm.quantity || '').trim();
     const image = productForm.image.trim();
     const description = productForm.description.trim();
     const tagsRaw = productForm.tags.trim();
@@ -413,6 +444,10 @@ export default function Admin() {
       setProductSuccess('');
       return;
     }
+    let quantity = Number(quantityRaw);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      quantity = 20;
+    }
     setProductSubmitting(true);
     setProductError('');
     setProductSuccess('');
@@ -427,6 +462,7 @@ export default function Admin() {
         name,
         category,
         price,
+        quantity,
         image,
         description,
         tags,
@@ -438,6 +474,7 @@ export default function Admin() {
         name: '',
         category: '',
         price: '',
+        quantity: '20',
         image: '',
         description: '',
         tags: '',
@@ -528,6 +565,7 @@ export default function Admin() {
       name: prod.name || '',
       category: prod.category || '',
       price: prod.price != null ? String(prod.price) : '',
+      quantity: prod.quantity != null ? String(prod.quantity) : '',
       image: prod.image || '',
       description: prod.description || '',
       tags: tagsValue,
@@ -541,6 +579,7 @@ export default function Admin() {
       name: '',
       category: '',
       price: '',
+      quantity: '',
       image: '',
       description: '',
       tags: '',
@@ -556,6 +595,7 @@ export default function Admin() {
     const name = editProductForm.name.trim();
     const category = editProductForm.category.trim();
     const priceRaw = editProductForm.price.trim();
+    const quantityRaw = editProductForm.quantity.trim();
     const image = editProductForm.image.trim();
     const description = editProductForm.description.trim();
     const tagsRaw = editProductForm.tags.trim();
@@ -568,6 +608,12 @@ export default function Admin() {
     const price = Number(priceRaw);
     if (!Number.isFinite(price) || price <= 0) {
       setEditProductError('Enter a valid price greater than 0.');
+      setEditProductSuccess('');
+      return;
+    }
+    const quantity = Number(quantityRaw);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      setEditProductError('Enter a valid quantity greater than 0.');
       setEditProductSuccess('');
       return;
     }
@@ -586,6 +632,7 @@ export default function Admin() {
         name,
         category,
         price,
+        quantity,
         image,
         description,
         tags,
@@ -597,6 +644,7 @@ export default function Admin() {
         name: '',
         category: '',
         price: '',
+        quantity: '',
         image: '',
         description: '',
         tags: '',
@@ -812,6 +860,16 @@ LoveCraft support team`;
               <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">Orders last 7 days</div>
               <div className="text-2xl font-semibold text-love-dark">{analytics.recentOrders}</div>
             </div>
+          </div>
+
+          <div className="flex justify-end mb-4">
+            <button
+              type="button"
+              onClick={handleDownloadReport}
+              className="inline-flex items-center px-4 py-2 rounded-lg bg-love-red text-white text-xs sm:text-sm font-medium hover:bg-love-dark transition-colors"
+            >
+              Download report
+            </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
@@ -1165,7 +1223,7 @@ LoveCraft support team`;
                     onChange={(e) => setProductForm(f => ({ ...f, name: e.target.value }))}
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                     <select
@@ -1190,6 +1248,16 @@ LoveCraft support team`;
                       className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
                       value={productForm.price}
                       onChange={(e) => setProductForm(f => ({ ...f, price: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                      value={productForm.quantity}
+                      onChange={(e) => setProductForm(f => ({ ...f, quantity: e.target.value }))}
                     />
                   </div>
                 </div>
@@ -1365,17 +1433,27 @@ LoveCraft support team`;
                                   ))}
                                 </select>
                               </div>
-                              <div>
-                                <label className="block text-[11px] font-medium text-gray-700 mb-1">Price (USD)</label>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
-                                  value={editProductForm.price}
-                                  onChange={(e) => setEditProductForm(f => ({ ...f, price: e.target.value }))}
-                                />
-                              </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-gray-700 mb-1">Price (USD)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                              value={editProductForm.price}
+                              onChange={(e) => setEditProductForm(f => ({ ...f, price: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-gray-700 mb-1">Quantity</label>
+                            <input
+                              type="number"
+                              min="1"
+                              className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-xs focus:ring-2 focus:ring-love-red focus:border-transparent outline-none"
+                              value={editProductForm.quantity}
+                              onChange={(e) => setEditProductForm(f => ({ ...f, quantity: e.target.value }))}
+                            />
+                          </div>
                             </div>
                             <div className="space-y-2">
                               <div>

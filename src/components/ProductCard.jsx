@@ -26,6 +26,12 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, rev
         : firstReview.message
       : '';
 
+  const isOutOfStock =
+    product &&
+    product.source === 'firestore' &&
+    typeof product.quantity === 'number' &&
+    product.quantity <= 0;
+
   function handleCardClick(e) {
     const target = e.target;
     if (target.closest('button') || target.closest('a')) {
@@ -51,6 +57,11 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, rev
           loading="lazy"
           className="w-full h-full object-cover object-top transition-transform duration-500 hover:scale-110" 
         />
+        {isOutOfStock && (
+          <div className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-semibold px-2 py-1 rounded-full shadow">
+            Out of stock
+          </div>
+        )}
         <button
           onClick={onToggleFavorite}
           aria-pressed={!!isFavorite}
@@ -98,19 +109,23 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, rev
             <span className="text-xl font-bold text-love-dark">${product.price.toFixed(2)}</span>
             <button 
               onClick={() => {
+                if (isOutOfStock) {
+                  return;
+                }
                 if (!currentUser) {
                   navigate('/login');
                   return;
                 }
                 setShowConfirm(true);
               }}
+              disabled={isOutOfStock}
               className="flex items-center space-x-1 bg-love-light text-love-red px-3 py-2 rounded-lg hover:bg-love-red hover:text-white transition-colors text-sm font-medium"
             >
               <ShoppingCart className="h-4 w-4" />
-              <span>Add</span>
+              <span>{isOutOfStock ? 'Out of stock' : 'Add'}</span>
             </button>
           </div>
-          {showConfirm && (
+          {showConfirm && !isOutOfStock && (
             <div className="mt-1 bg-love-light/60 border border-love-pink/40 rounded-lg px-3 py-2 text-xs">
               <p className="text-gray-700 mb-2">Add "{product.name}" to your cart?</p>
               <div className="flex justify-end space-x-2">

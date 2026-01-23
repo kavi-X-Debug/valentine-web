@@ -148,6 +148,23 @@ export default function Checkout() {
         console.error('Failed to update revenue stats after order creation', err);
       }
 
+      try {
+        const updates = cartItems
+          .filter(item => typeof item.id === 'string')
+          .map(item => {
+            const productRef = doc(db, 'products', item.id);
+            const qty = item.quantity || 1;
+            return setDoc(
+              productRef,
+              { quantity: increment(-qty) },
+              { merge: true }
+            );
+          });
+        await Promise.all(updates);
+      } catch (err) {
+        console.error('Failed to update product quantities after order creation', err);
+      }
+
       // Send Email Notification (Invoice)
       try {
         const itemsLines = cartItems.map((item) => {
